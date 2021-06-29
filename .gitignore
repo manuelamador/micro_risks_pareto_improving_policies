@@ -1,0 +1,10 @@
+scripts/.ipynb_checkpoints/*
+scripts/.ipynb_checkpoints
+scripts/.DS_Store
+output/scripts/jl_*
+output/jl_*
+jl_*
+.DS_Store
+.vscode/settings.json
+.vscode/*
+
