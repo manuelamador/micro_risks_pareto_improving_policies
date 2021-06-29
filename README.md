@@ -9,7 +9,7 @@ by Mark Aguiar, Manuel Amador and Cristina Arellano.
 
 ## Structure
 
-The subfolder `src` contains the main source 
+The subfolder `src` contains the main source code.
 
 The subfolder `scripts` contains some of the analysis of the model for certain parameters. It contains both a julia script as well as the corresponding jupyter notebook. The scripts generate the figures and moments reported in the paper.  
 
