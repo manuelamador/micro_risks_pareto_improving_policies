@@ -2,7 +2,7 @@
 
 The repository contains the code associated with the paper:
 
-"Micro Risks and Pareto Improving Policies withLow Interest Rates" 
+"Micro Risks and Pareto Improving Policies with Low Interest Rates" 
     
 by Mark Aguiar, Manuel Amador and Cristina Arellano. 
 
@@ -33,7 +33,7 @@ To run the jupyter notebook, do:
     julia> using IJulia
     julia> notebook(dir=".")
   
-That should open a browser with jupyter. Navigate to `scripts` to locate the notebooks. 
+That should open a browser with [Jupyter](https://jupyter.org/) . Navigate to `scripts` to locate the notebooks. 
 
 Theere are three notebooks:
 
@@ -41,7 +41,7 @@ Theere are three notebooks:
   `results_no_markups.iynb` contains the simulations for the dynamic inefficient case with no markups, as well as plots and summary statistics. 
   `steady_state_tradeoff_plots.ipyn` contains the steady state comparison plots. 
   
-Associated with each [Jupyter](https://jupyter.org/) notebook, there is a Julia script (`.jl`) that can be run instead. 
+Associated with Jupyter eachnotebook, there is a Julia script (`.jl`) that can be run instead. 
 
    
 
