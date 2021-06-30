@@ -35,7 +35,7 @@ To run the jupyter notebook, do:
   
 That should open a browser with [Jupyter](https://jupyter.org/) . Navigate to `scripts` to locate the notebooks. 
 
-Theere are three notebooks:
+There are three notebooks:
 
   `results_dynamic_efficient.iynb` contains the simulations for the dynamic efficient case, as well as plots and summary statistics. 
   `results_no_markups.iynb` contains the simulations for the dynamic inefficient case with no markups, as well as plots and summary statistics. 
