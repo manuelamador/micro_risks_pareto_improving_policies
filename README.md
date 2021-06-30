@@ -1,4 +1,4 @@
-# Micro risks and Pareto Improving policies 
+# Micro Risks and Pareto Improving Policies 
 
 The repository contains the code associated with the paper:
 
