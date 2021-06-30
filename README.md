@@ -35,3 +35,13 @@ To run the jupyter notebook, do:
   
 That should open a browser with jupyter. Navigate to `scripts` to locate the notebooks. 
 
+Theere are three notebooks:
+
+  `results_dynamic_efficient.iynb` contains the simulations for the dynamic efficient case, as well as plots and summary statistics. 
+  `results_no_markups.iynb` contains the simulations for the dynamic inefficient case with no markups, as well as plots and summary statistics. 
+  `steady_state_tradeoff_plots.ipyn` contains the steady state comparison plots. 
+  
+Associated with each [Jupyter](https://jupyter.org/) notebook, there is a Julia script (`.jl`) that can be run instead. 
+
+   
+
