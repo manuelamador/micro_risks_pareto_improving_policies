@@ -2,9 +2,9 @@
 
 The repository contains the code associated with the paper:
 
-"Micro Risks and Pareto Improving Policies with Low Interest Rates" 
+["Micro Risks and Pareto Improving Policies with Low Interest Rates"](https://manuelamador.me/files/rlessthang.pdf)
     
-by Mark Aguiar, Manuel Amador and Cristina Arellano. 
+by Mark Aguiar, Manuel Amador and Cristina Arellano (2021).
 
 
 ## Structure
