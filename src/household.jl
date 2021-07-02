@@ -9,12 +9,7 @@ function _iterate_policy!(arrays, h, r, w, transfer)
         @inbounds for i in indices((v0, pol, v1), 1)
             j = pol[i, s]
             x = get_x(h, w * z_grid[s], R * a_grid[i] - a_grid[j] + transfer)
-            x = max(x, 0.0)
-            Ev = 0.0
-            @turbo for sprime in axes(v0, 2)
-                Ev += P[s, sprime] * inside(u, v0[j, sprime])
-            end
-            v = outside(u, x, inverse_inside(u, Ev), β)
+            v = ϕ(u, max(x, 0.0), ce(u, view(P, s, :), view(v0, j, :)), β)
             distance = max(distance, abs(v - v0[i, s]))
             v1[i, s] = v
         end
@@ -41,12 +36,7 @@ function optimize_one_period!(arrays, h, r, w, transfer)
             cond = true
             while cond 
                 x = get_x(h, w * z_grid[s], R * a_grid[i] - a_grid[j] + transfer)
-                x = max(x, 0.0)
-                Ev = 0.0
-                @turbo for sprime in axes(v1, 2)
-                    Ev += P[s, sprime] * inside(u, v0[j, sprime])
-                end
-                temp = outside(u, x, inverse_inside(u, Ev), β)
+                temp = ϕ(u, max(x, 0.0), ce(u, view(P, s, :), view(v0, j, :)), β)
                 if temp >= vmax
                     improvement = true
                     vmax = temp 
@@ -95,7 +85,7 @@ function solve_stationary_household!(
 )
     if transfer_check
         is_transfer_feasible(h, w, transfer) ||  
-            @warn "Transfer $transfer too negative. Feasibility will break. Proceeding anyway."
+            error("Transfer $transfer too negative with wage $w and r $r. Feasibility will break.")
     end
 
     v0, v1, pol0, pol1 = arrays
@@ -106,7 +96,7 @@ function solve_stationary_household!(
         # geting the distances
         distance = zero(eltype(v0))
         distance_pol = zero(eltype(pol1))
-        @turbo for i in indices((v0, v1, pol0, pol1))
+        @tturbo for i in indices((v0, v1, pol0, pol1))
             distance = max(distance, abs(v0[i] - v1[i]))
             distance_pol = max(distance_pol, abs(pol0[i] - pol1[i]))
         end
@@ -138,7 +128,9 @@ function solve_stationary_household(
     max_iter = 10_000
 )
     arrays = prealloc_and_initialize_ss_PE(h; r, w, transfer)
-    return solve_stationary_household!(arrays, h, r, w; transfer, transfer_check, tol, max_iter, pol_iter_trigger)
+    return solve_stationary_household!(
+        arrays, h, r, w; 
+        transfer, transfer_check, tol, max_iter, pol_iter_trigger)
 end 
 
 
@@ -148,21 +140,21 @@ function prealloc_ss_PE(h)
     v_1 = similar(v_0)
     pol_0 = similar(v_0, Int64) 
     pol_1 = similar(pol_0)
-    return (v_0=v_0, v_1=v_1, pol_0 = pol_0, pol_1=pol_1)
+    return (v_0 = v_0, v_1 = v_1, pol_0 = pol_0, pol_1 = pol_1)
 end
 
 
 # preallocate and initializes the array for the ss_PE computation
 function prealloc_and_initialize_ss_PE(h; r, w, transfer)
-    @unpack z_grid, a_grid, u, β = h
+    @unpack z_grid, a_grid, β = h
 
     arrays = prealloc_ss_PE(h)
     @unpack v_0 = arrays
 
     # Doing an educated guess for the initial value function
     @inbounds for s in axes(v_0, 2), i in axes(v_0, 1) 
-        x = get_x(h, w * z_grid[s], r * a_grid[i]  + transfer)
-        v_0[i, s] = ss_value(u, x, β)
+        x = get_x(h, w * z_grid[s], r * a_grid[i] + transfer)
+        v_0[i, s] = max(x, 1e-6)
     end
     return arrays
 end 
@@ -203,8 +195,8 @@ function stationary_pdf!(
     pdf_0, pdf_1 = arrays
 
     # Initializing the pdf
-    mass = 0.0 
-    @turbo for i in eachindex(pdf_0, sol.v)
+    mass = zero(eltype(pdf_0))
+    for i in eachindex(pdf_0, sol.v)
         # putting mass only on states that are feasible
         pdf_0[i] = isfinite(sol.v[i]) ? one(eltype(pdf_0)) : zero(eltype(pdf_0))
         mass += pdf_0[i]
@@ -237,10 +229,7 @@ end
 
 # Checks whether a given level of transfer is consistent with the feasbility 
 # for the households. 
-function is_transfer_feasible(h, w, transfer)
-    return minimum_feasible_transfer(h, w) <= transfer
-end 
-
+is_transfer_feasible(h, w, transfer) = minimum_feasible_transfer(h, w) <= transfer
 
 function minimum_feasible_transfer(h, w)
     @unpack v, z_grid = h

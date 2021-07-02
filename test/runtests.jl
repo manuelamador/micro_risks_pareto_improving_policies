@@ -10,34 +10,26 @@ const atol = 1e-3
 @testset verbose=true "households structs" begin
 
     @testset "CRRA and Log" begin 
+
+        u = CRRA(1)
+        @test Ay.ϕ(u, 1.0, 2.0, 0.8) ≈ exp((1 - 0.8) * log(1.0) + 0.8 * log(2.0))
+
         u = CRRA(2.0)
-        @test u(1.0) ≈ -1 
-
-        u = Log()
-        @test u(2.0) ≈ log(2.0) 
-
-        @test Ay.outside(u, 1.0, 2.0, 0.8) ≈ log(1.0) + 0.8 * 2.0
-        @test Ay.inside(u, 0.8) ≈ 0.8
-        @test Ay.inverse_inside(u, 0.8) ≈ 0.8
-        @test Ay.ss_value(u, 0.7, 0.8) ≈ log(0.7) / (1 - 0.8)
+        @test Ay.ϕ(u, 1.0, 2.0, 0.8) ≈ ((1 - 0.8) * 1.0 + 0.8 * 2.0 ^ (1-2))^(1/(1-2))
     end 
 
     @testset "EZ" begin 
         u = EZ(ies = 1/2, ra = 2.0)
-        @test Ay.inside(u, 1.0) ≈ 1.0
-        @test Ay.inverse_inside(u, Ay.inside(u, 2.0)) ≈ 2.0 
 
         # with EZ, v = 0 is like minus infinite 
         # -> should delivered zero value no matter c
-        @test Ay.outside(u, 100.0, 0.0, 0.9) ≈ 0.0
+        @test Ay.ϕ(u, 100.0, 0.0, 0.9) ≈ 0.0
 
         u = EZ(ies = 1, ra = 1)
-        @test Ay.inside(u, 1.0) ≈ 0.0
-        @test Ay.inverse_inside(u, Ay.inside(u, 2.0)) ≈ 2.0 
 
         # with EZ, v = 0 is like minus infinite 
         # -> should delivered zero value no matter c
-        @test Ay.outside(u, 100.0, 0.0, 0.9) ≈ 0.0
+        @test Ay.ϕ(u, 100.0, 0.0, 0.9) ≈ 0.0
     end 
 
     @testset "GHH" begin
@@ -75,18 +67,18 @@ end
 
         sol = solve_stationary_household(h, 0.02, 1.0, tol = 1e-6)
 
-        @test isapprox(sol.v[1], -25.54764599280174; atol)
-        @test isapprox(sol.v[end], -15.109944737737447; atol)
+        @test isapprox(((sol.v[1])^(1 - 2))/(1 - 2)/(1 - h.β), -25.54764599280174; atol)
+        @test isapprox(((sol.v[end]) ^(1-2))/(1 - 2)/(1 - h.β), -15.109944737737447; atol)
         @test isapprox(stationary_pdf(h, sol)[1], 0.02333572741322308; atol)
 
     end 
 
     @testset "log" begin
-        h = Household(u=Log(), v = FixedLabor())
+        h = Household(u=CRRA(1), v = FixedLabor())
         sol = solve_stationary_household(h, 0.02, 1.0, tol = 1e-6)
 
-        @test isapprox(sol.v[1], -4.375219445045956; atol)
-        @test isapprox(sol.v[end], 6.460514883157743; atol)
+        @test isapprox(log(sol.v[1])/(1 - h.β), -4.375219445045956; atol)
+        @test isapprox(log(sol.v[end])/(1 - h.β), 6.460514883157743; atol)
         @test isapprox(stationary_pdf(h, sol)[1], 0.05929518440648782; atol)
     end 
 
@@ -118,8 +110,8 @@ end
 
         sol = solve_stationary_household(h, 0.02, 1.0, tol = 1e-6)
 
-        @test isapprox(sol.v[1], -32.17875754326171; atol)
-        @test isapprox(sol.v[end], -17.320584417232183; atol)
+        @test isapprox(((sol.v[1])^(1 - 2))/(1 - 2)/(1 - h.β), -32.17875754326171; atol)
+        @test isapprox(((sol.v[end])^(1 - 2))/(1 - 2)/(1 - h.β), -17.320584417232183; atol)
 
         pdf = stationary_pdf(h, sol) 
 
