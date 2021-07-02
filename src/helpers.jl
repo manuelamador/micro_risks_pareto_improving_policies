@@ -2,7 +2,7 @@
 function my_sup_norm(a, b)
     s = zero(eltype(a))
     @turbo for i in indices((a, b))
-        s += abs(a[i] - b[i])   
+        s = max(s, abs(a[i] - b[i]))   
     end
     return s
 end 

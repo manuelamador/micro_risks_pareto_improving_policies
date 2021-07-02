@@ -4,44 +4,43 @@
 
 abstract type AbstractUtility end 
 
-# ## Log Utility
-struct Log <: AbstractUtility end
 
-(::Log)(x) = log(x)
+# Helper structs for utility calculations
 
-function Base.show(io::IO, m::Log)
-    print(io, "Log")
-end 
+struct Log end
 
-
-# ## CRRA 
-Base.@kwdef struct CRRA{T <: AbstractFloat} <: AbstractUtility
-    σ::T = 2.0
-    m::T = 1 - σ
-    d::T = sign(m)
-end 
-
-CRRA(x) = CRRA(σ=convert(AbstractFloat, x))
-
-(u::CRRA)(x) = u.d * x^u.m 
-
-function Base.show(io::IO, m::CRRA)
-    print(io, "CRRA($(m.σ))")
-end 
-
-
-# ## Epstein-Zin 
-
-# Auxiliary struct for Epstein-Zin
 struct Power{T1, T2}
     m::T1 # exponent
-    n::T2 # inverse exponent
+    inv::T2 # inverse exponent
 end
 
 Power(x::Real) = Power(
     convert(AbstractFloat, x), 
     convert(AbstractFloat, 1/x)
 )
+
+
+# ## CRRA 
+struct CRRA{T1, T2} <: AbstractUtility
+    ra::T1
+    par::T2
+end 
+
+function CRRA(ra_par) 
+    ra = ra_par == 1 ? Log() : Power(1 - ra_par)
+    return CRRA(ra, ra_par)
+end 
+
+CRRA(; ra=2.0) = CRRA(ra) 
+
+function Base.show(io::IO, m::CRRA)
+    print(io, "CRRA(ra = $(m.par))")
+end 
+
+get_ies(u::CRRA) = u.ra
+get_ra(u::CRRA) = u.ra
+
+# ## Epstein-Zin 
 
 # Epstein-Zin type
 struct EZ{T1, T2, T3} <: AbstractUtility
@@ -62,6 +61,9 @@ function EZ(ies_par, ra_par)
 end 
 
 EZ(;ies=1/2, ra=2.0) = EZ(ies, ra) 
+
+get_ies(u::EZ) = u.ies
+get_ra(u::EZ) = u.ra
 
 
 # ## Disutility of labor 

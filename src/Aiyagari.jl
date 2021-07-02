@@ -42,7 +42,6 @@ export
 
     LinearIncomeTaxes,
 
-    Log, 
     CRRA, 
     EZ, 
     GHH,

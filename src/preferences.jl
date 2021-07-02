@@ -1,35 +1,34 @@
 # # Standard utility 
 
-# Assumes time separability where c is consumption net of the disutility_given_w 
-# of labor
+# intertemporal aggregator
+ϕ(::Log, c, v, β) = c^(1 - β) * v^β 
+ϕ(u::Power, c, v, β) = ((1 - β) * c^u.m + β * v^u.m)^u.inv
+ϕ(u, c, v, β) = ϕ(get_ies(u), c, v, β) 
 
-outside(u::AbstractUtility, c, v, β) = u(c) + β * v
-inside(::AbstractUtility, x) = x
-inverse_inside(::AbstractUtility, x) = x 
-ss_value(u::AbstractUtility, c, β) = u(c) / (1 - β) # stationary value of constant consumption
 
-# # EZ Methods -- non separability
-
-function outside(f::EZ{<:Power, T1, T2}, c, v, β) where {T1, T2}
-    ((1 - β) * c^f.ies.m + β * v^f.ies.m)^f.ies.n
+# certainty equivalent aggregator 
+function ce(::Log, π̄, v̄) 
+    s = zero(eltype(π̄))
+    @turbo for i in eachindex(π̄, v̄)
+        s += π̄[i] * log(v̄[i])
+    end 
+    return exp(s)
 end 
 
-function outside(::EZ{<:Log, T1, T2}, c, v, β) where {T1, T2}
-    c^(1 - β) * v^β 
+function ce(u::Power, π̄, v̄) 
+    s = zero(eltype(π̄))
+    @turbo for i in eachindex(π̄, v̄)
+        s += π̄[i] * (v̄[i] ^ u.m)
+    end 
+    return s ^ u.inv
 end 
 
-inside(::EZ{T1, <:Log, T2}, x) where {T1, T2} = log(x) 
-inside(f::EZ{T1, <:Power, T2}, x) where {T1, T2} = x^f.ra.m
+ce(u, π̄, v̄) = ce(get_ra(u), π̄, v̄) 
 
-inverse_inside(::EZ{T1, <:Log, T2}, x) where {T1, T2} = exp(x) 
-inverse_inside(f::EZ{T1, <:Power, T2}, x) where {T1, T2} = x^f.ra.n
-
-ss_value(::EZ, c, β) = c  # stationary value with constant consumption 
 
 # # Disutility of labor methods
 
 # Fixed Labor 
-
 n_of_w(v::FixedLabor, w) = v.n  # labor supply 
 disutility(::FixedLabor{R}, n) where {R} = zero(R)  # disutility
 disutility_given_w(::FixedLabor{R}, w) where {R} = zero(R)  # disutility

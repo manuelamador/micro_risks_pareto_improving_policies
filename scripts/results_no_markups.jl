@@ -60,7 +60,6 @@ e = let
     end
     # Households
     h = let 
-        g = 0.0
         ies = 1.0
         β = 0.99 #* (1 + g)^(1 - 1/ies)
         Household(

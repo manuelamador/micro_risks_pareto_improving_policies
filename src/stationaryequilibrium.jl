@@ -27,10 +27,12 @@ function solve_laissez_faire(
     f = @closure (r) -> begin
         local mpk = mpk_from_after_tax_rK(t, rK_from_r(; t, r))
         local w = rL_from_mpk(t, mpk)
-        local sol = solve_stationary_household!(tmp_arrays_1, h, r, w; 
+        local sol = solve_stationary_household!(
+            tmp_arrays_1, h, r, w; 
             transfer = 0.0, 
             tol = tol.value_function)
-        local pdf = stationary_pdf!(tmp_arrays_2, h, sol; 
+        local pdf = stationary_pdf!(
+            tmp_arrays_2, h, sol; 
             tol = tol.distribution)
         local s = asset_supply(h, pdf)
         local n = labor_supply(h, w)  
@@ -48,12 +50,14 @@ function solve_laissez_faire(
     r = find_zero(f, r_range, find_zero_args.method, 
         atol = find_zero_args.atol)
 
+    println("here")
     # Construct the rest of the equilibrium given r
     mpk = mpk_from_after_tax_rK(t, rK_from_r(; t, r))
     w = rL_from_mpk(t, mpk)  # Laissez-faire: no taxes, w = rL 
     n = labor_supply(h, w)   # Aggregate labor supply
     k = k_from_mpk(t; mpk, n)
-    sol = solve_stationary_household!(tmp_arrays_1, h, r, w; 
+    sol = solve_stationary_household!(
+        tmp_arrays_1, h, r, w; 
         transfer = 0.0, 
         tol = tol.value_function)
     pdf = stationary_pdf!(tmp_arrays_2, h, sol; 
