@@ -11,7 +11,9 @@ function solve_laissez_faire(
     tol = (value_function = _TOL_VALUE, distribution = _TOL_PDF),
     r_range = (-0.02, 0.02),
     verbose = true,
-    find_zero_args = (method = FalsePosition(3), atol = 1e-10)
+    find_zero_method = Bisection(), # Also try FalsePosition(3) - faster 
+                                    # but less reliable.
+    find_zero_args = (atol = 1e-10, xatol = 1e-8)
 )
     t = get_t(e)
     h = get_h(e)
@@ -47,10 +49,9 @@ function solve_laissez_faire(
     end
 
     # Look for an equilibrium interest rate. 
-    r = find_zero(f, r_range, find_zero_args.method, 
-        atol = find_zero_args.atol)
+    r = find_zero(f, r_range, find_zero_method;
+        find_zero_args...)
 
-    println("here")
     # Construct the rest of the equilibrium given r
     mpk = mpk_from_after_tax_rK(t, rK_from_r(; t, r))
     w = rL_from_mpk(t, mpk)  # Laissez-faire: no taxes, w = rL 
