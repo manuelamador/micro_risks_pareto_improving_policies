@@ -41,7 +41,7 @@ _ITERS = 1
 # ## Benchmark calibration
 
 # Dirk and Kurt's calibration (almost)
-e = let 
+e = let
     P, z_vals = let
         ar1 = 0.9695
         sigmaP = sqrt(0.0384)/(1.2)
@@ -49,7 +49,7 @@ e = let
          calibration(5, 2 , ar1, sigmaP, sigmaIID)
     end
     # Technology
-    t = let 
+    t = let
         θ = 0.3
         ls = 1 - θ
         δ = 0.1
@@ -59,22 +59,22 @@ e = let
         Technology(f = CobbDouglas(α = α1), δ = δ)
     end
     # Households
-    h = let 
+    h = let
         ies = 1.0
         β = 0.99 #* (1 + g)^(1 - 1/ies)
         Household(
             u = EZ(ies = 1.0, ra = 5.5),
-            v = GHH(θ = 1.0, ν = 0.2), 
+            v = GHH(θ = 1.0, ν = 0.2),
             P = P, z_grid = z_vals, β = β, a_max = 100.0)
     end
     Economy(h = h, t = t)
-end 
+end
 
 r_range = (-0.0172, -0.0171) # narrowing the range
-@time laissez_faire = solve_laissez_faire(e; 
-    r_range = r_range, 
+@time laissez_faire = solve_laissez_faire(e;
+    r_range = r_range,
     tol =  (value_function = 1e-10, distribution = 1e-13)
-) 
+)
 
 # ## New stationary outcome
 
@@ -98,7 +98,7 @@ r_range_2 = (-0.0152, -0.0148)  # narrowing the range
 
 # ## Transition
 
-T = 100 
+T = 100
 H = 50;
 
 # Smooth debt policy
@@ -108,47 +108,46 @@ b_list[1] = 0.0
 b_list[2] = laissez_faire.y * 0.05
 b_list[T:end] .= b_target
 for i in 3:T-1
-    b_list[i] = b_list[2] * ρB^(i-2) + (1 - ρB^(i-2)) * b_target   
+    b_list[i] = b_list[2] * ρB^(i-2) + (1 - ρB^(i-2)) * b_target
 end
 
-r_path = nothing 
+r_path = nothing
 if _LOAD_GUESSES
-    r_path = try 
-        # load the transfer vector from previous iterations 
+    r_path = try
+        # load the transfer vector from previous iterations
         readdlm(joinpath(@__DIR__, "..", "output", "tmp_calcs", "tmpINEFF001.txt"))[:,1]
-    catch 
-        nothing 
+    catch
+        nothing
     end
 end;
 
-function generate_k_b_no_taxk(laissez_faire, final, b_list; _max_k = 1e+5) 
-    f = @closure (r, i) -> begin 
+function generate_k_b_no_taxk(laissez_faire, final, b_list)
+    f = @closure (r, i) -> begin
         if i <= length(b_list)
             b = b_list[i]
-        else 
+        else
             b = final.b
         end
-        h = get_h(laissez_faire)
         t = get_t(laissez_faire)
         rK = rK_from_r(;t, r)
-        mpk = mpk_from_after_tax_rK(t, rK) 
+        mpk = mpk_from_after_tax_rK(t, rK)
         k = k_from_mpk(t; mpk, laissez_faire.n)
         return (k, b)
-    end 
+    end
     return f
-end 
+end
 
 my_k_b_fun = generate_k_b_no_taxk(laissez_faire, final_eq, b_list)
 
 transition = solve_transition(
-    laissez_faire, 
+    laissez_faire,
     final_eq;
     k_b_fun = my_k_b_fun,
     init_r_path = r_path,
-    path_length = T + H, 
-    iterations = _ITERS, 
+    path_length = T + H,
+    iterations = _ITERS,
     m = 10,
-    beta = -0.01 
+    beta = -0.01
 );
 
 plot(transition.path.r)
@@ -162,7 +161,7 @@ _SAVE_GUESSES && open(joinpath(@__DIR__, "..", "output", "tmp_calcs", "tmpINEFF0
     writedlm(io, transition.path.r)
 end
 
-# ## Satistics and Plots 
+# ## Satistics and Plots
 
 println("INITIAL STEADY STATE")
 println("=====================")
@@ -176,5 +175,3 @@ summary_statics(final_eq, path = transition.path, laissez_faire = laissez_faire)
 f1 = plot(do_plots(transition, laissez_faire)..., size = (800, 400))
 
 savefig(f1, joinpath(@__DIR__, "..", "output", "figures", "transition_inefficient.pdf"))
-
-

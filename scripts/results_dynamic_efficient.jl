@@ -40,14 +40,14 @@ _LOAD_GUESSES = true # load the initial starting guesses for zeros from disk
 _SAVE_GUESSES = false # save zeros to disk
 _ITERS = 1
 
-# Setting _LOAD_GUESSES to false will recompute all the calculations from scratch. At that point, 
-# set _ITERS to a higher number. 
+# Setting _LOAD_GUESSES to false will recompute all the calculations from scratch. At that point,
+# set _ITERS to a higher number.
 # -
 
-# ## The benchmark calibration 
+# ## The benchmark calibration
 
 #' The parameters for technology and households.
-e = let 
+e = let
     #Household:
     ar1 = 0.9695
     sigmaP = sqrt(0.0384)/(1.2)
@@ -57,7 +57,7 @@ e = let
     ies = 1.0
     crra = 5.5
     β = 0.993
-    
+
     hh = Household(u = EZ(ies = ies, ra = crra), grid_points = 5_000,
         v = GHH(θ = 1.0, ν = 0.2), P = P, z_grid = z_vals, β = β, a_max = 10.0)
 
@@ -75,16 +75,16 @@ end
 
 # Solve laissez-faire economy
 @time laissez_faire = let r_range = (-0.0170, -0.0169)
-    solve_laissez_faire(e; 
-        r_range = r_range, 
+    solve_laissez_faire(e;
+        r_range = r_range,
         tol =  (value_function = 1e-10, distribution = 1e-13)
-    ) 
-end 
+    )
+end
 
 # ## Transitions
 
 T = 100  # period of adjustment
-H = 50   # stationary part 
+H = 50   # stationary part
 
 # ## Transition with constant k and smooth b
 
@@ -95,8 +95,8 @@ k_target = laissez_faire.k
 
 @time final_eq_1 = solve_new_stationary_equilibrium_given_k_b(
     laissez_faire,
-    k_target, 
-    b_target; 
+    k_target,
+    b_target;
     r_range = (laissez_faire.r, -0.010),
     tol = (value_function = 1e-10, distribution = 1e-13)
 )
@@ -108,31 +108,31 @@ b_list[1] = 0.0
 b_list[2] = laissez_faire.y * 0.05
 b_list[T:end] .= b_target
 for i in 3:T-1
-    b_list[i] = b_list[2] * ρB^(i-2) + (1 - ρB^(i-2)) * b_target   
+    b_list[i] = b_list[2] * ρB^(i-2) + (1 - ρB^(i-2)) * b_target
 end
 
 # k remains constant
-k_list = [laissez_faire.k for _ in b_list]; 
+k_list = [laissez_faire.k for _ in b_list];
 
-# Computes the transition 
+# Computes the transition
 
-r_path = nothing 
+r_path = nothing
 if _LOAD_GUESSES
-    r_path = try 
-        # load the transfer vector from previous iterations 
+    r_path = try
+        # load the transfer vector from previous iterations
         readdlm(joinpath(@__DIR__,"..", "output", "tmp_calcs", "tmp_r_001.txt"))
-    catch 
-        nothing 
+    catch
+        nothing
     end
 end;
 
 # + tags=[]
 @time transition = solve_transition(
-    laissez_faire, 
-    final_eq_1, 
-    k_list, 
-    b_list; 
-    init_r_path = r_path, 
+    laissez_faire,
+    final_eq_1,
+    k_list,
+    b_list;
+    init_r_path = r_path,
     iterations = _ITERS);
 
 # + tags=[]
@@ -155,12 +155,12 @@ hline!([final_eq_1.r], lw = 1)
 
 # We go to the golden rule k -- slowly.
 
-k_golden = get_golden_k(e.t, laissez_faire.n)
+k_golden = golden_rule_k(e.t, laissez_faire.n)
 ρK = 0.95
 k_list_2 = similar(k_list)
 for i in eachindex(k_list_2)
     k_list_2[i] = laissez_faire.k * ρK^(i-1) + (1 - ρK^(i-1)) * k_golden
-end 
+end
 
 # The debt path and its target remains as in the previous case
 
@@ -171,30 +171,30 @@ b_target_2 = b_list[end]
 
 @time final_eq_2 = solve_new_stationary_equilibrium_given_k_b(
     laissez_faire,
-    k_list_2[end], 
-    b_target_2; 
+    k_list_2[end],
+    b_target_2;
     r_range = (laissez_faire.r, -0.010),
     tol = (value_function = 1e-10, distribution = 1e-13)
 )
 
 # Computing the transition:
 
-r_path_2 = nothing 
+r_path_2 = nothing
 if _LOAD_GUESSES
-    r_path_2 = try 
-        # load the transfer vector from previous iterations 
+    r_path_2 = try
+        # load the transfer vector from previous iterations
         readdlm(joinpath(@__DIR__, "..", "output", "tmp_calcs", "tmp_r_002.txt"))
     catch b
-        nothing 
+        nothing
     end
 end;
 
 # + tags=[]
 @time transition_2 = solve_transition(
-    laissez_faire, 
-    final_eq_2, 
-    k_list_2, 
-    b_list_2; 
+    laissez_faire,
+    final_eq_2,
+    k_list_2,
+    b_list_2;
     init_r_path = r_path_2,
     beta = -0.02,
     m = 10,
@@ -218,7 +218,7 @@ hline!([final_eq_2.r])
 
 # #### Comparison with previous case
 
-f1 = plot(transition_2.path.v[1] ./ laissez_faire.v .- transition.path.v[1] ./ laissez_faire.v, 
+f1 = plot(transition_2.path.v[1] ./ laissez_faire.v .- transition.path.v[1] ./ laissez_faire.v,
     legend = :bottom,
     title = "Welfare gain with k increasing wrt to k fixed")
 f2 = plot(transition.path.v[1] ./ laissez_faire.v .- 1)
@@ -243,7 +243,7 @@ plot!(
 
 # ## Transition with increasing k and no debt
 
-# No debt: 
+# No debt:
 
 b_list_3 = [0.0 for _ in k_list]
 b_target_3 = b_list_3[end];
@@ -256,27 +256,27 @@ k_list_3 = k_list_2;
 
 @time final_eq_3 = solve_new_stationary_equilibrium_given_k_b(
     laissez_faire,
-    k_list_3[end], 
-    b_target_3; 
+    k_list_3[end],
+    b_target_3;
     r_range = (laissez_faire.r, -0.010),
     tol = (value_function = 1e-10, distribution = 1e-13)
 )
 
-r_path_3 = nothing 
-if _LOAD_GUESSES 
-    r_path_3 = try 
+r_path_3 = nothing
+if _LOAD_GUESSES
+    r_path_3 = try
         readdlm(joinpath(@__DIR__, "..", "output", "tmp_calcs", "tmp_r_003.txt"))
-    catch 
-        nothing 
+    catch
+        nothing
     end
 end;
 
 # + tags=[]
 @time transition_3 = solve_transition(
-    laissez_faire, 
-    final_eq_3, 
-    k_list_3, 
-    b_list_3; 
+    laissez_faire,
+    final_eq_3,
+    k_list_3,
+    b_list_3;
     init_r_path = r_path_3,
     beta = -0.02,
     m = 10,
@@ -288,11 +288,11 @@ _SAVE_GUESSES && open(joinpath(@__DIR__, "..", "output", "tmp_calcs", "tmp_r_003
     writedlm(io, transition_3.path.r)
 end
 
-# ### Plots 
+# ### Plots
 
-plot(transition_3.path.transfer, 
+plot(transition_3.path.transfer,
     fill = 0, alpha = 0.3, label = "transfers", legend = :bottom)
-plot!(transition_3.path.transfer, color = 1) 
+plot!(transition_3.path.transfer, color = 1)
 hline!([0, final_eq_3.transfer], lw = 1)
 
 # + tags=[]
@@ -300,7 +300,7 @@ plot(transition_3.path.r, legend = :bottom, label = "r")
 hline!([laissez_faire.r, final_eq_3.r], lw = 1)
 # -
 
-# ## Statistics  
+# ## Statistics
 
 println("INITIAL STEADY STATE")
 println("=====================")
@@ -309,14 +309,14 @@ summary_statics(laissez_faire)
 
 println("\nFINAL STEADY STATE -- CONSTANT K AND DEBT")
 println("=====================")
-summary_statics(final_eq_1, 
-    laissez_faire = laissez_faire, 
+summary_statics(final_eq_1,
+    laissez_faire = laissez_faire,
     path = transition.path)
 
 
 println("FINAL STEADY STATE -- GOLDEN K AND DEBT")
 println("=====================")
-summary_statics(final_eq_2, 
+summary_statics(final_eq_2,
     laissez_faire = laissez_faire,
     path = transition_2.path)
 
@@ -337,7 +337,7 @@ f3 = plot(do_plots(transition_3, laissez_faire)..., size = (1000, 500))
 # We need to increase a_max so that it does not bind as we increase b.
 
 # Increasing the amax so that it doesn't bind
-e_2 = let 
+e_2 = let
     #Household:
     ar1 = 0.9695
     sigmaP = sqrt(0.0384)/(1.2)
@@ -347,7 +347,7 @@ e_2 = let
     ies = 1.0
     crra = 5.5
     β = 0.993
-    
+
     hh = Household(u = EZ(ies = ies, ra = crra), grid_points = 5_000,
         v = GHH(θ = 1.0, ν = 0.2), P = P, z_grid = z_vals, β = β, a_max = 50.0)
 
@@ -365,25 +365,25 @@ end
 
 # Solve laissez-faire economy
 @time laissez_faire_2 = let r_range = (-0.0175, -0.016)
-    solve_laissez_faire(e_2; 
-        r_range = r_range, 
+    solve_laissez_faire(e_2;
+        r_range = r_range,
         tol =  (value_function = 1e-10, distribution = 1e-13)
-    ) 
+    )
 end
 
-r_guess = nothing 
+r_guess = nothing
 if _LOAD_GUESSES
-    r_guess = try 
-        # load the transfer vector from previous iterations 
+    r_guess = try
+        # load the transfer vector from previous iterations
         readdlm(joinpath(@__DIR__, "..", "output", "tmp_calcs", "tmp_ss_b_r.txt"))
-    catch 
-        nothing 
+    catch
+        nothing
     end
 end;
 
 out = let
     range = [laissez_faire_2.r, 0.0]
-    f = (b, i) -> begin 
+    f = (b, i) -> begin
         print(i, " ", b, ", ")
         if !isnothing(r_guess)
             myrange = [r_guess[i, 2] - 1e-5, r_guess[i, 2] + 1e-5]
@@ -392,14 +392,14 @@ out = let
         end
         sol = solve_new_stationary_equilibrium_given_k_b(
             laissez_faire_2,
-            laissez_faire_2.k, 
-            b * laissez_faire_2.y; 
+            laissez_faire_2.k,
+            b * laissez_faire_2.y;
             r_range = myrange,
             tol = (value_function = 1e-7, distribution = 1e-7),
             verbose = false,
             find_zero_args = (xatol = 1e-5, maxevals = _ITERS)
         )
-        range[2] = sol.r  # iterating down -- change top value of range 
+        range[2] = sol.r  # iterating down -- change top value of range
         sol
     end
     [f(i, b) for (b, i) in enumerate(reverse(0.2:0.2:7.0))]
@@ -410,14 +410,14 @@ _SAVE_GUESSES && open(joinpath(@__DIR__, "..", "output", "tmp_calcs", "tmp_ss_b_
     writedlm(io, [(eq.b, eq.r) for eq in out])
 end
 
-f4 = let 
+f4 = let
     by = [eq.b / eq.y for eq in out]
     rb = [-eq.r * eq.b / eq.y for eq in out]
     deltark = [(eq.r - laissez_faire_2.r) * eq.k / eq.y for eq in out]
     plot(by, rb,  label = L"- r  b / y", legend = :bottom, size = (1000/3, 500/2))
     plot!(by, deltark, fillrange = rb, color = 1, alpha = 0.2)
     plot!(by, deltark, color = 2, label = L" (r - r_0)  k_0 / y")
-end 
+end
 
 # ## Exporting the figures
 
@@ -428,5 +428,3 @@ savefig(f2, joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_
 savefig(f3, joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_no_debt.pdf"))
 
 savefig(f4, joinpath(@__DIR__, "..", "output", "figures", "steady_state_transfers.pdf"))
-
-

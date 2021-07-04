@@ -1,49 +1,49 @@
-# # Standard utility 
+# # Standard utility
 
 # intertemporal aggregator
-ϕ(::Log, c, v, β) = c^(1 - β) * v^β 
+ϕ(::Log, c, v, β) = c^(1 - β) * v^β
 ϕ(u::Power, c, v, β) = ((1 - β) * c^u.m + β * v^u.m)^u.inv
-ϕ(u, c, v, β) = ϕ(get_ies(u), c, v, β) 
+ϕ(u, c, v, β) = ϕ(get_ies(u), c, v, β)
 
 
-# certainty equivalent aggregator 
-function ce(::Log, π̄, v̄) 
-    s = zero(eltype(π̄))
-    @turbo for i in eachindex(π̄, v̄)
-        s += π̄[i] * log(v̄[i])
-    end 
+# certainty equivalent aggregator
+function ce(::Log, p⃗, v⃗)
+    s = zero(eltype(p⃗))
+    @turbo for i in eachindex(p⃗, v⃗)
+        s += p⃗[i] * log(v⃗[i])
+    end
     return exp(s)
-end 
+end
 
-function ce(u::Power, π̄, v̄) 
-    s = zero(eltype(π̄))
-    @turbo for i in eachindex(π̄, v̄)
-        s += π̄[i] * (v̄[i] ^ u.m)
-    end 
+function ce(u::Power, p⃗, v⃗)
+    s = zero(eltype(p⃗))
+    @turbo for i in eachindex(p⃗, v⃗)
+        s += p⃗[i] * (v⃗[i] ^ u.m)
+    end
     return s ^ u.inv
-end 
+end
 
-ce(u, π̄, v̄) = ce(get_ra(u), π̄, v̄) 
+ce(u, p⃗, v⃗) = ce(get_ra(u), p⃗, v⃗)
 
 
 # # Disutility of labor methods
 
-# Fixed Labor 
-n_of_w(v::FixedLabor, w) = v.n  # labor supply 
+# Fixed Labor
+labor(v::FixedLabor, w) = v.n  # labor supply
+labor_income(v::FixedLabor, w) = w * v.n  # labor income
 disutility(::FixedLabor{R}, n) where {R} = zero(R)  # disutility
 disutility_given_w(::FixedLabor{R}, w) where {R} = zero(R)  # disutility
-labor_income_given_w(v::FixedLabor, w) = w * v.n  # labor income
 
 
-# GHH 
-n_of_w(v::GHH, w) = (w / v.θ)^v.ν  # labor supply 
-disutility(v::GHH, n) = v.θ * n^(1 + 1/v.ν) / (1 + 1/v.ν) 
-disutility_given_w(v::GHH, w) = v.θ * (w / v.θ)^(v.ν + 1) / (1 + 1/v.ν)  
-labor_income_given_w(v::GHH, w) = w^(1 + v.ν) / (v.θ^v.ν)  # labor income
+# GHH
+labor(v::GHH, w) = (w / v.θ)^v.ν  # labor supply
+labor_income(v::GHH, w) = w^(1 + v.ν) / (v.θ^v.ν)  # labor income
+disutility(v::GHH, n) = v.θ * n^(1 + 1/v.ν) / (1 + 1/v.ν)
+disutility_given_w(v::GHH, w) = v.θ * (w / v.θ)^(v.ν + 1) / (1 + 1/v.ν)
 
 
-# Consumption from budget constraint
-get_c(h, w, other_net_income) = labor_income_given_w(get_v(h), w) + other_net_income
+# Household consumption given w and other income
+consumption(h, w, other_net_income) = labor_income(get_v(h), w) + other_net_income
 
-# GHH inner value 
-get_x(h, w, other_net_income) = get_c(h, w, other_net_income) - disutility_given_w(get_v(h), w)
+# GHH inner value
+net_consumption(h, w, other_net_income) = consumption(h, w, other_net_income) - disutility_given_w(get_v(h), w)
