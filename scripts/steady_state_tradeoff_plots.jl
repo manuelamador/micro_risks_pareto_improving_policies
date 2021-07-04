@@ -104,22 +104,6 @@ eq_μ = let
 end
 
 let
-    get_ky = (r, t, n) -> begin
-        k = k_from_mpk(t,
-                    mpk = mpk_from_after_tax_rK(t, r + t.δ),
-                    n = n)
-        y = output(t, k = k, n = n)
-        return k / y
-    end
-
-    get_k = (r, t, n) -> begin
-        k = k_from_mpk(t,
-                    mpk = mpk_from_after_tax_rK(t, r + t.δ),
-                    n = n)
-        return k
-    end
-
-
     t = get_t(laissez_faire_μ)
     n0 = laissez_faire_μ.n
     y0 = laissez_faire_μ.y
@@ -128,15 +112,11 @@ let
     ky_1 = final_eq_μ.k / y1
     sy_1 = final_eq_μ.s / y1
     r_1 = final_eq_μ.r
-    r_0= laissez_faire_μ.r
+    r_0 = laissez_faire_μ.r
 
-    # plot([(eq.s / eq.y, eq.r) for eq in eq_μ ], color = :black)
     plot([(eq.s / y0, eq.r) for eq in eq_μ ], color = :black)
-   #  plot!([(get_ky(r, t, n0), r) for r in range(-0.03, 0.01, length = 15)], color = :red)
-     plot!([(get_k(r, t, n0)/y0, r) for r in range(-0.03, 0.01, length = 15)], color = :red)
-    # plot!([ (k / output(t, n = n0, k = k), mpk_from_factors(t, k = k, n = n0) - t.δ) for k in range(2 * y0, 5 * y0, length = 15)],
-     #   color = :blue, style = :dash)
-     plot!([ (k / y0, mpk_from_factors(t, k = k, n = n0) - t.δ) for k in range(2 * y0, 5 * y0, length = 15)],
+    plot!([(get_k(r, t, n0)/y0, r) for r in range(-0.03, 0.01, length = 15)], color = :red)
+    plot!([(k / y0, mpk_from_factors(t, k = k, n = n0) - t.δ) for k in range(2 * y0, 5 * y0, length = 15)],
         color = :blue, style = :dash)
 
     ylims!(-0.03, 0.01)
@@ -157,7 +137,6 @@ let
              fillcolor=:gray,         # set shade color
              label = "Revenue: r*dS", legend=false, grid=false)
 
-
     hline!([0], color = :black, lw = 2)
     vline!([laissez_faire_μ.k / laissez_faire_μ.y], color = :black, lw = 0.75)
 end
@@ -167,11 +146,11 @@ savefig(joinpath(@__DIR__, "..", "output", "figures", "CostBenefit_Efficient.pdf
 
 # # Crowding in
 
-kGR=golden_rule_k(e_μ.t,laissez_faire_μ.n)
+kGR = golden_rule_k(e_μ.t, laissez_faire_μ.n)
 
 eq_crowdin = let
     y_0 = laissez_faire_μ.y
-    eq_crowdin=[]
+    eq_crowdin = []
     b_range = range(-0.5 * y_0,0.0, length=5)
     for b in b_range
         push!(eq_crowdin,
@@ -219,30 +198,14 @@ end
 @time crowdin_final = solve_new_stationary_equilibrium_given_k_b(
     laissez_faire_μ,
     kGR,
-    0.6*laissez_faire_μ.y;
+    0.6 * laissez_faire_μ.y;
     r_range = (laissez_faire_μ.r, -0.010),
     tol = (value_function = 1e-10, distribution = 1e-13)
 )
 
 # +
 let
-    get_ky = (r, t, n) -> begin
-        k = k_from_mpk(t,
-                    mpk = mpk_from_after_tax_rK(t, r + t.δ),
-                    n = n)
-        y = output(t, k = k, n = n)
-        return k / y
-    end
-
-       get_k = (r, t, n) -> begin
-        k = k_from_mpk(t,
-                    mpk = mpk_from_after_tax_rK(t, r + t.δ),
-                    n = n)
-        return k
-    end
-
-
-    r_0=laissez_faire_μ.r
+    r_0 = laissez_faire_μ.r
     t = get_t(laissez_faire_μ)
     n0 = laissez_faire_μ.n
     y0 = laissez_faire_μ.y
@@ -253,10 +216,7 @@ let
     r_1 = crowdin_final.r
 
     plot([(eq.s / y0, eq.r) for eq in eq_crowdin], color = :black)
-   # plot!([(get_k(r, t, n0), r) for r in range(-0.03, 0.01, length = 15)], color = :red)
     plot!([(get_k(r, t, n0)/y0, r) for r in range(-0.03, 0.01, length = 15)], color = :red)
-    # plot!([ (k / output(t, n = n0, k = k), mpk_from_factors(t, k = k, n = n0) - t.δ) for k in range(2 * y0, 5 * y0, length = 15)],
-    #    color = :blue, style = :dash)
     plot!([ (k / y0, mpk_from_factors(t, k = k, n = n0) - t.δ) for k in range(2 * y0, 5 * y0, length = 15)],
         color = :blue, style = :dash)
     ylims!(-0.03, 0.0175)
@@ -264,37 +224,31 @@ let
     hline!([laissez_faire_μ.r, crowdin_final.r], color = :black, lw = 0.75)
     vline!([laissez_faire_μ.k / laissez_faire_μ.y, kGR/laissez_faire_μ.y], color = :black, lw = 0.75)
 
-        plot!([0,ky_0],             # xlims for shade
+    plot!([0,ky_0],             # xlims for shade
          [0,0],                   # dummy y coordinates
          fillrange = (r_0,r_1), # apply ylims
          fillalpha = 0.5,         # set transparency
          fillcolor=:red,         # set shade color
          label = "Cost: Δr*K/Y")
 
-plot!([  (k / y0, mpk_from_factors(t, k = k, n = n0) - t.δ) for k in range(laissez_faire_μ.k,kGR, length = 15)],
-fill = (0, 0.5, :blue),lw=0.0)
+    plot!([  (k / y0, mpk_from_factors(t, k = k, n = n0) - t.δ) for k in range(laissez_faire_μ.k,kGR, length = 15)],
+        fill = (0, 0.5, :blue),lw=0.0)
 
-
-       plot!([ky_0,crowdin_final.k /y0],             # xlims for shade
-         [0,0],                   # dummy y coordinates
-         fillrange = (r_1,0.0), # apply ylims
-         fillalpha = 0.5,         # set transparency
-         fillcolor=:blue,         # set shade color
-         label = "Revenue I: (MPK-δ)* ΔK/Y")
-
+    plot!([ky_0,crowdin_final.k /y0],             # xlims for shade
+        [0,0],                   # dummy y coordinates
+        fillrange = (r_1,0.0), # apply ylims
+        fillalpha = 0.5,         # set transparency
+        fillcolor=:blue,         # set shade color
+        label = "Revenue I: (MPK-δ)* ΔK/Y")
 
     plot!([crowdin_final.k /y0,crowdin_final.s/y0],             # xlims for shade
-             [0,0],                   # dummy y coordinates
-             fillrange = (r_1,0.0), # apply ylims
-             fillalpha = 0.75,         # set transparency
-             fillcolor=:gray,         # set shade color
-             label = "Revenue II: r*ΔS/Y")
-
+        [0,0],                   # dummy y coordinates
+        fillrange = (r_1,0.0), # apply ylims
+        fillalpha = 0.75,         # set transparency
+        fillcolor=:gray,         # set shade color
+        label = "Revenue II: r*ΔS/Y")
 
     hline!([0], color = :black, lw = 2,legend=false, grid=false)
-
-
-
 end
 # -
 
@@ -343,11 +297,10 @@ r_range = (-0.0172, -0.0171) # narrowing the range
 
 
 @time final_eq = let
+    tol = (value_function = 1e-7, distribution = 1e-8)
     b_target = laissez_faire.y*0.6
     r_range_2 = (-0.0152, -0.0148)  # narrowing the range
-    solve_new_stationary_equilibrium_given_k_b(
-    laissez_faire;
-    k_b_fun = (r) -> begin
+    solve_new_stationary_equilibrium_given_k_b(laissez_faire; r_range = r_range_2, tol) do (r)
         # returns k consistent with r and no capital taxes
         t = get_t(laissez_faire)
         b = b_target
@@ -355,31 +308,23 @@ r_range = (-0.0172, -0.0171) # narrowing the range
         mpk = mpk_from_after_tax_rK(t, rK)
         k = k_from_mpk(t; mpk, laissez_faire.n)
         return (k, b)
-    end,
-    r_range = r_range_2,
-    tol = (value_function = 1e-7, distribution = 1e-8)
-    )
+    end
 end
 
 
-eq_nomarkup = let
+eq_nomarkup = let  r_range = [-.03,0.0], tol = (value_function = 1e-7, distribution = 1e-8)
     b_range = range(-1.0 * laissez_faire.y, 4.5 * laissez_faire.y, length = 15)
     eq_nomarkup = []
     for b in b_range
         push!(eq_nomarkup,
-            solve_new_stationary_equilibrium_given_k_b(
-                laissez_faire;
-                k_b_fun = (r) -> begin
-                    # returns k consistent with r and no capital taxes
-                    t = get_t(laissez_faire)
-                    rK = rK_from_r(;t, r)
-                    mpk = mpk_from_after_tax_rK(t, rK)
-                    k = k_from_mpk(t; mpk, laissez_faire.n)
-                    return (k, b)
-                end,
-                r_range = [-.03,0.0],
-                tol = (value_function = 1e-7, distribution = 1e-8)
-            )
+            solve_new_stationary_equilibrium_given_k_b(laissez_faire; r_range, tol) do  (r)
+                # returns k consistent with r and no capital taxes
+                t = get_t(laissez_faire)
+                rK = rK_from_r(;t, r)
+                mpk = mpk_from_after_tax_rK(t, rK)
+                k = k_from_mpk(t; mpk, laissez_faire.n)
+                return (k, b)
+            end
         )
     end
     eq_nomarkup
@@ -388,14 +333,6 @@ end
 
 # +
 let
-    get_ky = (r, t, n) -> begin
-        k = k_from_mpk(t,
-                    mpk = mpk_from_after_tax_rK(t, r + t.δ),
-                    n = n)
-        y = output(t, k = k, n = n)
-        return k / y
-    end
-
     t = get_t(laissez_faire)
     n0 = laissez_faire.n
     y0 = laissez_faire.y
@@ -405,9 +342,8 @@ let
     sy_1 = final_eq.s / y1
     r_1 = final_eq.r
 
- plot([(eq.s / y0, eq.r) for eq in eq_nomarkup], color = :black)
- plot!([ (k / y0, mpk_from_factors(t, k = k, n = n0) - t.δ) for k in range(2 * y0, 5 * y0, length = 15)], color = :red)
-
+    plot([(eq.s / y0, eq.r) for eq in eq_nomarkup], color = :black)
+    plot!([ (k / y0, mpk_from_factors(t, k = k, n = n0) - t.δ) for k in range(2 * y0, 5 * y0, length = 15)], color = :red)
 
     ylims!(-0.03, 0.01)
     xlims!(0.0, 5)
@@ -420,24 +356,22 @@ let
          fillcolor=:red,         # set shade color
          label = "Cost: Δr*K/Y")
 
-plot!([ky_0,final_eq.k/y0],             # xlims for shade
+    plot!([ky_0,final_eq.k/y0],             # xlims for shade
          [0,0],                   # dummy y coordinates
          fillrange = (r_1,0.0), # apply ylims
          fillalpha = 0.25,         # set transparency
          fillcolor=:gray,         # set shade color
          label = "Revenue I: r*dK")
 
-plot!([ky_0,final_eq.s/y0],             # xlims for shade
+    plot!([ky_0,final_eq.s/y0],             # xlims for shade
          [0,0],                   # dummy y coordinates
          fillrange = (r_1,0.0), # apply ylims
          fillalpha = 0.75,         # set transparency
          fillcolor=:gray,         # set shade color
          label = "Revenue II: r*dS")
 
-
     hline!([0], color = :black, lw = 2)
     vline!([laissez_faire.k / laissez_faire.y], color = :black, lw = 0.75, legend=false,grid=false)
-
 
 end
 # -

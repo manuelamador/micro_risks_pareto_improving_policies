@@ -30,11 +30,9 @@ function solve_laissez_faire(
     end
 
     # Construct the rest of the equilibrium given r
-    mpk = mpk_from_after_tax_rK(t, rK_from_r(; t, r))
-    w = rL_from_mpk(t, mpk)  # Laissez-faire: no taxes, w = rL
-    n = labor_supply(h, w)   # Aggregate labor supply
-    k = k_from_mpk(t; mpk, n)
-    sol = solve_stationary_household!(tmp_arrays_1, h, r, w; transfer = 0.0, tol = tol.value_function)
+    (k, w, n) = _laissez_faire_alloc_from_r(e, r)
+    transfer = zero(w0)
+    sol = solve_stationary_household!(tmp_arrays_1, h, r, w; transfer, tol = tol.value_function)
     pdf = stationary_pdf!(tmp_arrays_2, h, sol; tol = tol.distribution)
 
     return StationaryEquilibrium(;
@@ -46,18 +44,29 @@ function solve_laissez_faire(
     )
 end
 
-# Helper function to compute the excess asset supply in the laissez_faire calculations
-function _laissez_faire_excess!(tmp_arrays, r, e, tol, verbose, p)
+
+function _laissez_faire_alloc_from_r(e, r)
     t = get_t(e)
     h = get_h(e)
-    tmp_arrays_1, tmp_arrays_2 = tmp_arrays
 
-    mpk = mpk_from_after_tax_rK(t, rK_from_r(; t, r))
-    w = rL_from_mpk(t, mpk)
-    n = labor_supply(h, w)
+    rK = rK_from_r(; t, r)
+    mpk = mpk_from_after_tax_rK(t, rK)
+    w = rL_from_mpk(t, mpk)  # Laissez-faire: no taxes, w = rL
+    n = labor_supply(h, w)   # Aggregate labor supply
     k = k_from_mpk(t; mpk, n)
+    return (k, w, n)
+end
 
-    sol = solve_stationary_household!(tmp_arrays_1, h, r, w; transfer = 0.0, tol = tol.value_function)
+
+# Helper function to compute the excess asset supply in the laissez_faire calculations
+function _laissez_faire_excess!(tmp_arrays, r, e, tol, verbose, p)
+    h = get_h(e)
+    (tmp_arrays_1, tmp_arrays_2) = tmp_arrays
+
+    (k, w, _) = _laissez_faire_alloc_from_r(e, r)
+
+    transfer = zero(w)
+    sol = solve_stationary_household!(tmp_arrays_1, h, r, w; transfer, tol = tol.value_function)
     pdf = stationary_pdf!(tmp_arrays_2, h, sol; tol = tol.distribution)
     s = asset_supply(h, pdf)
 
@@ -77,8 +86,7 @@ function solve_new_stationary_equilibrium_given_k_b(
     find_zero_args = (atol = 1e-7, xatol = 1e-7)
 )
     solve_new_stationary_equilibrium_given_k_b(
-        (r) -> (k, b),
-        laissez_faire;
+        (r) -> (k, b), laissez_faire;
         tol, r_range, verbose, find_zero_method, find_zero_args)
 end
 
@@ -105,11 +113,11 @@ function solve_new_stationary_equilibrium_given_k_b(
     arrays1.v_0 .= laissez_faire.v
     arrays2 = prealloc_pdfs(h)
 
-    min_transfer =  minimum_feasible_transfer(h, w)
+    tr_min =  minimum_feasible_transfer(h, w)
 
     p = ProgressUnknown()
     r = find_zero(r_range, find_zero_method; find_zero_args...) do (r)
-        _new_equilibrium_excess!(tmp_arrays, r, k_b_fun, laissez_faire, min_transfer, tol, verbose, p)
+        _new_equilibrium_excess!(tmp_arrays, r, k_b_fun, laissez_faire, tr_min, tol, verbose, p)
     end
 
     k, b = k_b_fun(r)
@@ -128,7 +136,7 @@ end
 
 
 # Helper function to compute the excess asset supply in the new equilibrium calculations
-function _new_equilibrium_excess!(tmp_arrays, r, k_b_fun, laissez_faire, min_transfer, tol, verbose, p)
+function _new_equilibrium_excess!(tmp_arrays, r, k_b_fun, laissez_faire, tr_min, tol, verbose, p)
     t = get_t(laissez_faire)
     h = get_h(laissez_faire)
 
@@ -142,7 +150,7 @@ function _new_equilibrium_excess!(tmp_arrays, r, k_b_fun, laissez_faire, min_tra
     c = output(t; k, n) - t.δ * k # new stationary aggregate consumption level
     tr = (c -  x - s * r)
 
-    if tr <= min_transfer
+    if tr <= tr_min
         # transfer is too low
         distance = - Inf
     else

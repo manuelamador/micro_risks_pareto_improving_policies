@@ -91,9 +91,9 @@ function solve_transition(
     end
 
     return solve_transition(
+        k_b_fun,
         laissez_faire,
         final;
-        k_b_fun = f,
         path_length,
         init_r_path,
         residuals,
@@ -109,8 +109,7 @@ end
 # should return the corresponding a tuple (k, b) representing the value of k and
 # b in that period i given interest rate r.
 function solve_transition(
-    laissez_faire, final;
-    k_b_fun,
+    k_b_fun, laissez_faire, final;
     path_length,
     init_r_path = nothing,
     residuals = Vector{typeof(laissez_faire.r)}(undef, path_length),

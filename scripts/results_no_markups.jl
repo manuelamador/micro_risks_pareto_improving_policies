@@ -82,19 +82,16 @@ b_target = laissez_faire.y * 0.60
 
 r_range_2 = (-0.0152, -0.0148)  # narrowing the range
 @time final_eq = solve_new_stationary_equilibrium_given_k_b(
-    laissez_faire;
-    k_b_fun = (r) -> begin
-        # returns k consistent with r and no capital taxes
+        laissez_faire; r_range = r_range_2, tol = (value_function = 1e-7, distribution = 1e-8)
+    ) do (r)
+        # returns (k, b) consistent with r and no capital taxes
         t = get_t(laissez_faire)
         b = b_target
         rK = rK_from_r(;t, r)
         mpk = mpk_from_after_tax_rK(t, rK)
         k = k_from_mpk(t; mpk, laissez_faire.n)
         return (k, b)
-    end,
-    r_range = r_range_2,
-    tol = (value_function = 1e-7, distribution = 1e-8)
-)
+    end
 
 # ## Transition
 
@@ -121,7 +118,7 @@ if _LOAD_GUESSES
     end
 end;
 
-function generate_k_b_no_taxk(laissez_faire, final, b_list)
+function generate_k_b_no_τk(laissez_faire, final, b_list)
     f = @closure (r, i) -> begin
         if i <= length(b_list)
             b = b_list[i]
@@ -137,12 +134,12 @@ function generate_k_b_no_taxk(laissez_faire, final, b_list)
     return f
 end
 
-my_k_b_fun = generate_k_b_no_taxk(laissez_faire, final_eq, b_list)
+my_k_b_fun = generate_k_b_no_τk(laissez_faire, final_eq, b_list)
 
 transition = solve_transition(
+    my_k_b_fun,
     laissez_faire,
     final_eq;
-    k_b_fun = my_k_b_fun,
     init_r_path = r_path,
     path_length = T + H,
     iterations = _ITERS,
