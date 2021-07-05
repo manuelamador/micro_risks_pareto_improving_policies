@@ -41,8 +41,8 @@ function calibration(nP::Int64, nIID::Int64, ρ::Float64, σP::Float64, σIID::F
         end
     end
 
-    for p in eachrow(P) 
-        p .= p ./ sum(p) 
+    for p in eachrow(P)
+        p .= p ./ sum(p)
     end
 
     # compute mean of ergodic
@@ -83,6 +83,7 @@ function rouwenhorst(N::Integer, ρ::Real, σ::Real, μ::Real=0.0)
 
     return p, state_values
 end
+
 function _rouwenhorst(p::Real, q::Real, m::Real, Δ::Real, n::Integer)
     if n == 2
         return [m - Δ, m + Δ],  [p 1 - p; 1 - q q]

@@ -1,4 +1,4 @@
-module Aiyagari 
+module Aiyagari
 
 using UnPack
 using StaticArrays
@@ -18,11 +18,12 @@ using LaTeXStrings
 include("types.jl")
 include("calibration.jl")
 include("helpers.jl")
-include("firms.jl") 
+include("firms.jl")
 include("fiscal.jl")
 include("preferences.jl")
-include("household.jl") 
-include("stationaryequilibrium.jl")
+include("household_problem.jl")
+include("distribution_and_aggregates.jl")
+include("stationary_equilibrium.jl")
 include("transition.jl")
 include("summaries_plots.jl")
 
@@ -31,51 +32,50 @@ const _TOL_VALUE = 1e-6
 const _TOL_PDF = 1e-8
 
 
-export 
+export
 
 # types.jl
 
     CobbDouglas,
     CES,
     Technology,
-    MarkupTechnology, 
+    MarkupTechnology,
 
     LinearIncomeTaxes,
 
-    CRRA, 
-    EZ, 
+    CRRA,
+    EZ,
     GHH,
     FixedLabor,
-    
+
     Household,
 
     Economy,
 
     get_e,
-    get_h, 
-    get_t, 
+    get_h,
+    get_t,
 
-# households.jl
+# household_problem.jl
 
     solve_stationary_household!,
     solve_stationary_household,
-
-    stationary_pdf!, 
-    stationary_pdf, 
-
-    asset_supply, 
-    labor_supply,
-
     is_valid,
+    consumption_alloc,
 
-    consumption,
+# distribution_and_aggregates.jl
+
+    stationary_pdf!,
+    stationary_pdf,
+    asset_supply,
+    labor_supply,
     aggregate,
 
 # firms.jl
 
-    get_y,
-    get_mpk,
-    get_golden_k,
+    output,
+    mpk_from_factors,
+    golden_rule_k,
 
     rK_from_r,
     mpk_from_after_tax_rK,
@@ -83,16 +83,16 @@ export
 
 # fiscal.jl
 
-    get_taxes, 
+    taxes,
 
 # calibration.jl
 
     calibration,
 
-# stationaryequilibrium.jl
+# stationary_equilibrium.jl
 
     solve_laissez_faire,
-    solve_new_stationary_equilibrium_given_k_b, 
+    solve_new_stationary_equilibrium_given_k_b,
 
 # transition.jl
 
@@ -102,5 +102,5 @@ export
 
     summary_statics,
     do_plots
-    
-end 
+
+end
