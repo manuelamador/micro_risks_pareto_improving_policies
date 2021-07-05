@@ -9,9 +9,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.11.1
 #   kernelspec:
-#     display_name: Julia 4 Threads 1.6.1
+#     display_name: Julia 8 Threads 1.6.1
 #     language: julia
-#     name: julia-4-threads-1.6
+#     name: julia-8-threads-1.6
 # ---
 
 import Pkg
@@ -29,6 +29,9 @@ ProgressMeter.ijulia_behavior(:clear);
 # pgfplotsx();
 gr()
 default(label = "", lw = 2, dpi = 300, left_margin = 0Plots.mm, format=:png);
+
+# helper function
+get_k(r, t, n) = k_from_mpk(t; mpk = mpk_from_after_tax_rK(t, r + t.δ), n)
 
 # # Mark-up Economy
 
@@ -101,7 +104,7 @@ eq_μ = let
         )
     end
     eqs
-end
+end;
 
 let
     t = get_t(laissez_faire_μ)
@@ -203,7 +206,6 @@ end
     tol = (value_function = 1e-10, distribution = 1e-13)
 )
 
-# +
 let
     r_0 = laissez_faire_μ.r
     t = get_t(laissez_faire_μ)
@@ -250,7 +252,6 @@ let
 
     hline!([0], color = :black, lw = 2,legend=false, grid=false)
 end
-# -
 
 savefig(joinpath(@__DIR__, "..", "output", "figures", "CostBenefit_Crowdin.pdf"))
 
@@ -269,14 +270,12 @@ e = let
         ls = 1 - θ
         δ = 0.1
         #α1, A1 = get_tech_params(1, θ = θ)
-        g = 0.0
         A1=1.0
         α1=0.3
-        Technology(f = CobbDouglas(α = α1), δ = δ, g = g)
+        Technology(f = CobbDouglas(α = α1), δ = δ)
     end
     # Households
     h = let
-        g = 0.0
         ies = 1.0
         β = 0.99 #* (1 + g)^(1 - 1/ies)
         Household(
@@ -377,3 +376,5 @@ end
 # -
 
 savefig(joinpath(@__DIR__, "..", "output", "figures", "CostBenefit_Nomarkup.pdf"))
+
+

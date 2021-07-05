@@ -25,7 +25,7 @@ function solve_laissez_faire(
     p = ProgressUnknown()
 
     # Look for an equilibrium interest rate.
-    r = find_zero(r_range, find_zero_method; find_zero_args...) do (r)
+    r = @closure find_zero(r_range, find_zero_method; find_zero_args...) do (r)
         _laissez_faire_excess!((tmp_arrays_1, tmp_arrays_2), r, e, tol, verbose, p)
     end
 
@@ -110,8 +110,9 @@ function solve_new_stationary_equilibrium_given_k_b(
     w = laissez_faire.w
 
     arrays1 = prealloc_stationary_household(h)
-    arrays1.v_0 .= laissez_faire.v
+    arrays1.v0 .= laissez_faire.v  # initial guess for v0
     arrays2 = prealloc_pdfs(h)
+    tmp_arrays = (arrays1, arrays2)
 
     tr_min =  minimum_feasible_transfer(h, w)
 

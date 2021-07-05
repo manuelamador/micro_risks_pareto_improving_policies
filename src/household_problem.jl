@@ -135,11 +135,11 @@ end
 
 # Preallocates the arrays for the ss_PE computation
 function prealloc_stationary_household(h)
-    v_0 = Array{Float64, 2}(undef, (h.grid_points, h.n))
-    v_1 = similar(v_0)
-    pol_0 = similar(v_0, Int64)
-    pol_1 = similar(pol_0)
-    return (v_0 = v_0, v_1 = v_1, pol_0 = pol_0, pol_1 = pol_1)
+    v0 = Array{Float64, 2}(undef, (h.grid_points, h.n))
+    v1 = similar(v0)
+    pol0 = similar(v0, Int64)
+    pol1 = similar(pol0)
+    return (v0 = v0, v1 = v1, pol0 = pol0, pol1 = pol1)
 end
 
 
@@ -148,12 +148,12 @@ function initialize_stationary_household(h; r, w, transfer)
     @unpack z_grid, a_grid, β = h
 
     arrays = prealloc_stationary_household(h)
-    @unpack v_0 = arrays
+    @unpack v0 = arrays
 
     # Doing an educated guess for the initial value function
-    @inbounds for s in axes(v_0, 2), i in axes(v_0, 1)
+    @inbounds for s in axes(v0, 2), i in axes(v0, 1)
         x = net_consumption(h, w * z_grid[s], r * a_grid[i] + transfer)
-        v_0[i, s] = max(x, 1e-6)
+        v0[i, s] = max(x, 1e-6)
     end
     return arrays
 end

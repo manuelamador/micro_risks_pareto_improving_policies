@@ -7,11 +7,11 @@
 #       extension: .jl
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.11.3
+#       jupytext_version: 1.11.1
 #   kernelspec:
-#     display_name: Julia 4 Threads 1.6.1
+#     display_name: Julia 8 Threads 1.6.1
 #     language: julia
-#     name: julia-4-threads-1.6
+#     name: julia-8-threads-1.6
 # ---
 
 # # Dynamic Efficient Case
@@ -428,3 +428,5 @@ savefig(f2, joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_
 savefig(f3, joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_no_debt.pdf"))
 
 savefig(f4, joinpath(@__DIR__, "..", "output", "figures", "steady_state_transfers.pdf"))
+
+

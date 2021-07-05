@@ -91,14 +91,8 @@ function solve_transition(
     end
 
     return solve_transition(
-        k_b_fun,
-        laissez_faire,
-        final;
-        path_length,
-        init_r_path,
-        residuals,
-        kwargs...
-    )
+        f, laissez_faire, final;
+        path_length, init_r_path, residuals, kwargs...)
 end
 
 

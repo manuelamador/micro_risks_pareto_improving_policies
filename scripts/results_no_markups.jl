@@ -7,14 +7,14 @@
 #       extension: .jl
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.11.3
+#       jupytext_version: 1.11.1
 #   kernelspec:
-#     display_name: Julia 4 Threads 1.6.1
+#     display_name: Julia 8 Threads 1.6.1
 #     language: julia
-#     name: julia-4-threads-1.6
+#     name: julia-8-threads-1.6
 # ---
 
-# # Case with no capital tax
+# # Case with no capital tax and no markups
 
 # Here we do the simulation of the case where there is no capital tax, and as a result, the level of capital adjusts with the interest rate. This is done for the economy without markups.
 
@@ -81,7 +81,7 @@ r_range = (-0.0172, -0.0171) # narrowing the range
 b_target = laissez_faire.y * 0.60
 
 r_range_2 = (-0.0152, -0.0148)  # narrowing the range
-@time final_eq = solve_new_stationary_equilibrium_given_k_b(
+@time final_eq = @closure solve_new_stationary_equilibrium_given_k_b(
         laissez_faire; r_range = r_range_2, tol = (value_function = 1e-7, distribution = 1e-8)
     ) do (r)
         # returns (k, b) consistent with r and no capital taxes
@@ -172,3 +172,5 @@ summary_statics(final_eq, path = transition.path, laissez_faire = laissez_faire)
 f1 = plot(do_plots(transition, laissez_faire)..., size = (800, 400))
 
 savefig(f1, joinpath(@__DIR__, "..", "output", "figures", "transition_inefficient.pdf"))
+
+
