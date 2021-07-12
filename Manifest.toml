@@ -117,12 +117,6 @@ git-tree-sha1 = "ee400abb2298bd13bfc3df1c412ed228061a2385"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 version = "1.7.0"
 
-[[DataFrames]]
-deps = ["Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Reexport", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
-git-tree-sha1 = "1dadfca11c0e08e03ab15b63aaeda55266754bad"
-uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "1.2.0"
-
 [[DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
 git-tree-sha1 = "4437b64df1e0adccc3e5d1adbc3ac741095e4677"
@@ -254,10 +248,6 @@ git-tree-sha1 = "aa31987c2ba8704e23c6c8ba8a4f769d5d7e4f91"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.10+0"
 
-[[Future]]
-deps = ["Random"]
-uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
-
 [[GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
 git-tree-sha1 = "dba1e8614e98949abfa60480b13653813d8f0157"
@@ -343,12 +333,6 @@ version = "0.5.0"
 [[InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
-
-[[InvertedIndices]]
-deps = ["Test"]
-git-tree-sha1 = "15732c475062348b0165684ffe28e85ea8396afc"
-uuid = "41ab1584-1d38-5bbf-9106-f11c6c58b48f"
-version = "1.0.0"
 
 [[IterTools]]
 git-tree-sha1 = "05110a2ab1fc5f932622ffea2a003221f4782c18"
@@ -660,12 +644,6 @@ deps = ["ArrayInterface", "IfElse", "Requires", "Static", "StrideArraysCore", "T
 git-tree-sha1 = "04a03d3f8ae906f4196b9085ed51506c4b466340"
 uuid = "f517fe37-dbe3-4b94-8317-1923a5111588"
 version = "0.3.1"
-
-[[PooledArrays]]
-deps = ["DataAPI", "Future"]
-git-tree-sha1 = "cde4ce9d6f33219465b55162811d8de8139c0414"
-uuid = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
-version = "1.2.1"
 
 [[Preferences]]
 deps = ["TOML"]
