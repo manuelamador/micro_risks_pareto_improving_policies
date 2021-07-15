@@ -151,8 +151,8 @@ end;
 # ### Plots
 
 #plot(transition_3.path.transfer, fill = 0, alpha = 0.3)
-plot(transition_3.path.transfer, color = 1)
-hline!([0, final_eq_3.transfer], lw = 1)
+plot(transition_3.path.transfer./laissez_faire.y, color = 1)
+hline!([0, final_eq_3.transfer./laissez_faire.y], lw = 1)
 #vline!([T1,T1+T2,T3], lw = 1)
 
 savefig(joinpath(@__DIR__, "output", "figures", "transfers_no_LR_debt.pdf"))
