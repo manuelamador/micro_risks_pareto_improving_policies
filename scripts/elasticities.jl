@@ -80,17 +80,17 @@ T = 100  # period of adjustment
 H = 50   # stationary part
 
 # +
-function clean_transition_val(transition_val)
-    @unpack e, ies, crra, β = transitions_val
-    y0 = transitions_val.laissez_faire.y
-    path_r = transitions_val.transition.path.r
-    path_tr = transitions_val.transition.path.transfer
+function clean_transition_val(val)
+    @unpack e, ies, crra, β = val
+    y0 = val.laissez_faire.y
+    path_r = val.transition.path.r
+    path_tr = val.transition.path.transfer
     return (ies = ies, crra = crra, β = β, y0 = y0, e = e, path_r = path_r, path_tr = path_tr)
 end 
 
 function solve_models(e_vals)
     #Iterate over preferences
-    transitions_vals = Array{Any}(undef, length(e_vals))
+    transitions = Array{Any}(undef, length(e_vals))
 
     Threads.@threads for i = 1:length(e_vals)
         println("Simulation # $i / $(length(e_vals)) started")
@@ -158,10 +158,10 @@ function solve_models(e_vals)
 
         println("Finished transition for simulation # $i")
 
-        transitions_vals[i] = (e_vals[i]..., laissez_faire = laissez_faire, transition = transition)
+        transitions[i] = (e_vals[i]..., laissez_faire = laissez_faire, transition = transition)
     end
     
-    return [clean_transition_val(x) for x in transitions_vals]
+    return [clean_transition_val(x) for x in transitions]
 end 
 # -
 
