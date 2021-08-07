@@ -132,6 +132,9 @@ function solve_transition(
         r_list = [laissez_faire.r for _ in 1:path_length]
     else
         r_list = init_r_path
+        r_list[i] = laissez_faire.r # Makes sure that initial r does not change
+                                    # as it won't get updated below 
+                                    # TODO: fixed algorithm to remove first r below
     end
 
     # Precomputing some values
