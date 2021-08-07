@@ -5,7 +5,7 @@ function _iterate_policy!(arrays, h, r, w, transfer)
     R = 1 + r
     v0, v1, pol = arrays
     distance = 0.0
-    Threads.@threads for s in axes(v0, 2)
+    @floops for s in axes(v0, 2)
         @inbounds for i in indices((v0, pol, v1), 1)
             j = pol[i, s]
             x = net_consumption(h, w * z_grid[s], R * a_grid[i] - a_grid[j] + transfer)
@@ -26,7 +26,7 @@ function optimize_one_period!(arrays, h, r, w, transfer)
     @unpack β, P, z_grid, grid_points, u, a_grid = h
     R = 1 + r
     v0, v1, pol1 = arrays
-    Threads.@threads for s in axes(v1, 2)
+    @floops for s in axes(v1, 2)
         # Doing the optimization.
         pol = 1  # starting policy
         vmax = -Inf
