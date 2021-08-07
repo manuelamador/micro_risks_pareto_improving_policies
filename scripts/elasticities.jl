@@ -2,7 +2,8 @@
 # # Comparative statics with respect to preference parameters 
 
 import Pkg
-Pkg.activate("..")
+Pkg.activate(joinpath(@__DIR__, ".."))
+Pkg.instantiate()
 
 using Revise
 using UnPack
@@ -89,7 +90,7 @@ end
 
 function solve_models(e_vals)
     #Iterate over preferences
-    transitions_vals=[]
+    transitions_vals = Array{Any}(undef, length(e_vals))
 
     Threads.@threads for i = 1:length(e_vals)
         println("Simulation # $i / $(length(e_vals)) started")
@@ -109,6 +110,7 @@ function solve_models(e_vals)
         k_target = laissez_faire.k
 
         println("Finished laissez-faire for simulation # $i")
+        
         # Solve final SS
         final_eq_1 = solve_new_stationary_equilibrium_given_k_b(
             laissez_faire,
@@ -156,10 +158,10 @@ function solve_models(e_vals)
 
         println("Finished transition for simulation # $i")
 
-        push!(transitions_vals, (e_vals[i]..., laissez_faire = laissez_faire, transition = transition))
+        transitions_vals[i] = (e_vals[i]..., laissez_faire = laissez_faire, transition = transition)
     end
     
-    return map(clean_transition_val, e_vals)
+    return [clean_transition_val(x) for x in transitions_vals]
 end 
 # -
 
@@ -167,7 +169,10 @@ end
 
 # ## Plots 
 
-benchmark = findfirst(x -> x.ies == ies_vals[1] && x.crra == crra_vals[1] && x.β == β_vals[1])
+benchmark = let 
+    benchmark_i = findfirst(x -> x.ies == ies_vals[1] && x.crra == crra_vals[1] && x.β == β_vals[1], out)
+    out[benchmark_i]
+end
 
 # ### IES
 
