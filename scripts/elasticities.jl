@@ -75,8 +75,7 @@ e_vals = creating_economies(pars);
 # Internal parameters for computations 
 _TOLS = (value_function = 1e-10, distribution = 1e-13) # (value_function = 1e-10, distribution = 1e-13)
 _ITERS = 100 # 100
-_LOAD_GUESSES = true # load the initial starting guesses for zeros from disk
-;
+
 
 # +
 function clean_transition_val(val)
@@ -87,7 +86,7 @@ function clean_transition_val(val)
     return (ies = ies, crra = crra, β = β, y0 = y0, e = e, path_r = path_r, path_tr = path_tr)
 end 
 
-function solve_models(e_vals; tols = _TOLS, iters = _ITERS, load_guesses = _LOAD_GUESSES)
+function solve_models(e_vals; tols = _TOLS, iters = _ITERS)
     #Iterate over preferences
     transitions = Array{Any}(undef, length(e_vals))
 
@@ -141,22 +140,12 @@ function solve_models(e_vals; tols = _TOLS, iters = _ITERS, load_guesses = _LOAD
         k_list = [laissez_faire.k for _ in b_list];
 
         # Computes the transition
-        r_path = nothing
-        if _LOAD_GUESSES
-            r_path = try
-                # load the transfer vector from previous iterations
-                readdlm(joinpath(@__DIR__,"..", "output", "tmp_calcs", "tmp_r_001.txt"))
-            catch
-                nothing
-            end
-        end;
-
         transition = solve_transition(
             laissez_faire,
             final_eq,
             k_list,
             b_list;
-            init_r_path = r_path,
+            init_r_path = nothing,
             iterations = _ITERS,
             show_trace = false);
         println("Finished transition for simulation # $i, residual = $(maximum(abs.(transition.residuals)))")
