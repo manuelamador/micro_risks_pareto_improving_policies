@@ -22,9 +22,6 @@ Threads.nthreads()
 ProgressMeter.ijulia_behavior(:clear);
 default(label = "", lw = 2, dpi = 300, left_margin = 0Plots.mm, format=:svg);
 
-_LOAD_GUESSES = true # load the initial starting guesses for zeros from disk
-_ITERS = 100
-
 function creating_economies(vals_list)
     e_vals = NamedTuple{(:ies, :crra, :β, :e),Tuple{Float64, Float64, Float64, Economy}}[]
     for vals in vals_list
@@ -75,9 +72,11 @@ end
 e_vals = creating_economies(pars);
 # -
 
-# ## Transitions
-T = 100  # period of adjustment
-H = 50   # stationary part
+# Internal parameters for computations 
+_TOLS = (value_function = 1e-10, distribution = 1e-13) # (value_function = 1e-10, distribution = 1e-13)
+_ITERS = 100 # 100
+_LOAD_GUESSES = true # load the initial starting guesses for zeros from disk
+;
 
 # +
 function clean_transition_val(val)
@@ -88,39 +87,44 @@ function clean_transition_val(val)
     return (ies = ies, crra = crra, β = β, y0 = y0, e = e, path_r = path_r, path_tr = path_tr)
 end 
 
-function solve_models(e_vals)
+function solve_models(e_vals; tols = _TOLS, iters = _ITERS, load_guesses = _LOAD_GUESSES)
     #Iterate over preferences
     transitions = Array{Any}(undef, length(e_vals))
 
-    Threads.@threads for i = 1:length(e_vals)
+    # ## Transitions
+    T = 100  # period of adjustment
+    H = 50   # stationary part
+
+    Threads.@threads for i in 1:length(e_vals)
+        
         println("Simulation # $i / $(length(e_vals)) started")
-        e=e_vals[i].e
+        
+        e = e_vals[i].e
 
         # Solve laissez-faire economy
         laissez_faire = let r_range = (-0.04, -0.00)
             solve_laissez_faire(e;
                 r_range = r_range,
-                tol =  (value_function = 1e-10, distribution = 1e-13), 
+                tol =  _TOLS, 
                 verbose = false
             )
         end
-
+        
+        println("Finished laissez-faire for simulation # $i")
+        
         # We target a debt of 60% percent of output
         b_target = laissez_faire.y * 0.60
         k_target = laissez_faire.k
 
-        println("Finished laissez-faire for simulation # $i")
-        
         # Solve final SS
-        final_eq_1 = solve_new_stationary_equilibrium_given_k_b(
+        final_eq = solve_new_stationary_equilibrium_given_k_b(
             laissez_faire,
             k_target,
             b_target;
-            r_range = (laissez_faire.r-.01, laissez_faire.r+.01),
-            tol = (value_function = 1e-10, distribution = 1e-13), 
+            r_range = (laissez_faire.r - 0.01, laissez_faire.r + 0.01),
+            tol = _TOLS, 
             verbose = false
         )
-
         println("Finished new eqm for simulation # $i")
 
         # Smooth debt policy
@@ -129,8 +133,8 @@ function solve_models(e_vals)
         b_list[1] = 0.0
         b_list[2] = laissez_faire.y * 0.05
         b_list[T:end] .= b_target
-        for i in 3:T-1
-            b_list[i] = b_list[2] * ρB^(i-2) + (1 - ρB^(i-2)) * b_target
+        for j in 3:T-1
+            b_list[j] = b_list[2] * ρB^(j-2) + (1 - ρB^(j-2)) * b_target
         end
 
         # k remains constant
@@ -149,14 +153,13 @@ function solve_models(e_vals)
 
         transition = solve_transition(
             laissez_faire,
-            final_eq_1,
+            final_eq,
             k_list,
             b_list;
             init_r_path = r_path,
             iterations = _ITERS,
             show_trace = false);
-
-        println("Finished transition for simulation # $i")
+        println("Finished transition for simulation # $i, residual = $(maximum(abs.(transition.residuals)))")
 
         transitions[i] = (e_vals[i]..., laissez_faire = laissez_faire, transition = transition)
     end
