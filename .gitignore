@@ -8,3 +8,4 @@ jl_*
 .vscode/settings.json
 .vscode/*
 
+src/.ipynb_checkpoints/transition-checkpoint.jl

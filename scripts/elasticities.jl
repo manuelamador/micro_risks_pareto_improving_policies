@@ -92,14 +92,15 @@ function solve_models(e_vals)
     transitions_vals=[]
 
     Threads.@threads for i = 1:length(e_vals)
-        println(i)
+        println("Simulation # $i / $(length(e_vals)) started")
         e=e_vals[i].e
 
         # Solve laissez-faire economy
-        @time laissez_faire = let r_range = (-0.04, -0.00)
+        laissez_faire = let r_range = (-0.04, -0.00)
             solve_laissez_faire(e;
                 r_range = r_range,
-                tol =  (value_function = 1e-10, distribution = 1e-13), verbose = false
+                tol =  (value_function = 1e-10, distribution = 1e-13), 
+                verbose = false
             )
         end
 
@@ -107,14 +108,18 @@ function solve_models(e_vals)
         b_target = laissez_faire.y * 0.60
         k_target = laissez_faire.k
 
+        println("Finished laissez-faire for simulation # $i")
         # Solve final SS
-        @time final_eq_1 = solve_new_stationary_equilibrium_given_k_b(
+        final_eq_1 = solve_new_stationary_equilibrium_given_k_b(
             laissez_faire,
             k_target,
             b_target;
             r_range = (laissez_faire.r-.01, laissez_faire.r+.01),
-            tol = (value_function = 1e-10, distribution = 1e-13), verbose = false
+            tol = (value_function = 1e-10, distribution = 1e-13), 
+            verbose = false
         )
+
+        println("Finished new eqm for simulation # $i")
 
         # Smooth debt policy
         ρB = 0.9
@@ -140,13 +145,16 @@ function solve_models(e_vals)
             end
         end;
 
-        @time transition = solve_transition(
+        transition = solve_transition(
             laissez_faire,
             final_eq_1,
             k_list,
             b_list;
             init_r_path = r_path,
-            iterations = _ITERS);
+            iterations = _ITERS,
+            show_trace = false);
+
+        println("Finished transition for simulation # $i")
 
         push!(transitions_vals, (e_vals[i]..., laissez_faire = laissez_faire, transition = transition))
     end
@@ -155,7 +163,7 @@ function solve_models(e_vals)
 end 
 # -
 
-out = solve_models(e_vals);
+@time out = solve_models(e_vals);
 
 # ## Plots 
 
@@ -163,7 +171,7 @@ benchmark = findfirst(x -> x.ies == ies_vals[1] && x.crra == crra_vals[1] && x.�
 
 # ### IES
 
-f1 = plot(benchmark.path_r,  linecolor=:blue, lw = 1)
+f1 = plot(benchmark.path_r,  linecolor=:blue, lw = 2, size = (1000/3, 500/2))
 plot!(f1, [y.path_r for y in out if y.ies==0.5 && y.crra==5.5 && y.β==0.993], linecolor=:black, linestyle=:dash, lw = 1)
 plot!(f1, [y.path_r for y in out if y.ies==1.5 && y.crra==5.5 && y.β==0.993], linecolor=:red, linestyle=:dot, lw = 1)
 
@@ -240,3 +248,5 @@ push!(transfers,
 pretty_table([y for y in rates])
 
 pretty_table([y for y in transfers])
+
+
