@@ -5,6 +5,8 @@ import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."))
 Pkg.instantiate()
 
+_FIGURES_DIR = joinpath(@__DIR__, "..", "output", "figures")
+
 using Revise
 using UnPack
 using Aiyagari
@@ -15,6 +17,7 @@ using Roots
 using Plots
 using LaTeXStrings
 using PrettyTables
+using FLoops
 
 pgfplotsx();
 Threads.nthreads()
@@ -94,7 +97,7 @@ function solve_models(e_vals; tols = _TOLS, iters = _ITERS)
     T = 100  # period of adjustment
     H = 50   # stationary part
 
-    Threads.@threads for i in 1:length(e_vals)
+    @floops for i in 1:length(e_vals)
         
         println("Simulation # $i / $(length(e_vals)) started")
         
@@ -164,49 +167,49 @@ end
 benchmark = let 
     benchmark_i = findfirst(x -> x.ies == ies_vals[1] && x.crra == crra_vals[1] && x.β == β_vals[1], out)
     out[benchmark_i]
-end
+end;
 
 # ### IES
 
 f1 = plot(benchmark.path_r,  linecolor=:blue, lw = 2, size = (1000/3, 500/2))
-plot!(f1, [y.path_r for y in out if y.ies==0.5 && y.crra==5.5 && y.β==0.993], linecolor=:black, linestyle=:dash, lw = 1)
-plot!(f1, [y.path_r for y in out if y.ies==1.5 && y.crra==5.5 && y.β==0.993], linecolor=:red, linestyle=:dot, lw = 1)
+plot!(f1, [y.path_r for y in out if y.ies==0.5 && y.crra==5.5 && y.β==0.993], linecolor=:black, linestyle=:dash, lw = 2)
+plot!(f1, [y.path_r for y in out if y.ies==1.5 && y.crra==5.5 && y.β==0.993], linecolor=:red, linestyle=:dot, lw = 2)
 
-savefig(f1, joinpath(@__DIR__, "output", "figures", "IES_interest.pdf"))
+savefig(f1, joinpath(_FIGURES_DIR, "IES_interest.pdf"))
 
-f2 = plot(benchmark.path_tr./benchmark.y0,  linecolor=:blue, lw = 1)
+f2 = plot(benchmark.path_tr./benchmark.y0,  linecolor=:blue, lw = 2,  size = (1000/3, 500/2))
 plot!(f2, [y.path_tr./y.y0 for y in out if y.ies==0.5 && y.crra==5.5 && y.β==0.993], linecolor=:black, linestyle=:dash, lw = 1)
-plot!(f2, [y.path_tr./y.y0 for y in out if y.ies==1.5 && y.crra==5.5 && y.β==0.993], linecolor=:red, linestyle=:dot, lw = 1)
+plot!(f2, [y.path_tr./y.y0 for y in out if y.ies==1.5 && y.crra==5.5 && y.β==0.993], linecolor=:red, linestyle=:dot, lw = 2)
 
-savefig(f2, joinpath(@__DIR__, "output", "figures", "IES_transfers.pdf"))
+savefig(f2, joinpath(_FIGURES_DIR, "IES_transfers.pdf"))
 
 # ### Discount
 
-f3 = plot(benchmark.path_r,  linecolor=:blue, lw = 1)
-plot!(f3, [y.path_r for y in out if y.ies==1.0 && y.crra==5.5 && y.β==0.97], linecolor=:black, linestyle=:dash, lw = 1)
-plot!(f3, [y.path_r for y in out if y.ies==1.0 && y.crra==5.5 && y.β==0.98], linecolor=:red, linestyle=:dot, lw = 1)
+f3 = plot(benchmark.path_r,  linecolor=:blue, lw = 2, size = (1000/3, 500/2))
+plot!(f3, [y.path_r for y in out if y.ies==1.0 && y.crra==5.5 && y.β==0.97], linecolor=:black, linestyle=:dash, lw = 2)
+plot!(f3, [y.path_r for y in out if y.ies==1.0 && y.crra==5.5 && y.β==0.98], linecolor=:red, linestyle=:dot, lw = 2)
 
-savefig(f3, joinpath(@__DIR__, "output", "figures", "Beta_interest.pdf"))
+savefig(f3, joinpath(_FIGURES_DIR, "Beta_interest.pdf"))
 
-f4 = plot(benchmark.path_tr./benchmark.y0,  linecolor=:blue, lw = 1)
-plot!(f4, [y.path_tr./y.y0 for y in out if y.ies==1.0 && y.crra==5.5 && y.β==0.97], linecolor=:black, linestyle=:dash, lw = 1)
-plot!(f4, [y.path_tr./y.y0 for y in out if y.ies==1.0 && y.crra==5.5 && y.β==0.98], linecolor=:red, linestyle=:dot, lw = 1)
+f4 = plot(benchmark.path_tr./benchmark.y0,  linecolor=:blue, lw = 2, size = (1000/3, 500/2))
+plot!(f4, [y.path_tr./y.y0 for y in out if y.ies==1.0 && y.crra==5.5 && y.β==0.97], linecolor=:black, linestyle=:dash, lw = 2)
+plot!(f4, [y.path_tr./y.y0 for y in out if y.ies==1.0 && y.crra==5.5 && y.β==0.98], linecolor=:red, linestyle=:dot, lw = 2)
 
-savefig(f4, joinpath(@__DIR__, "output", "figures", "Beta_transfers.pdf"))
+savefig(f4, joinpath(_FIGURES_DIR, "Beta_transfers.pdf"))
 
 # ### CRRA
 
-f5 = plot(benchmark.path_r,  linecolor=:blue, lw = 1)
-plot!(f5, [y.path_r for y in out if y.ies==1.0 && y.crra==2.0 && y.β==0.993], linecolor=:black, linestyle=:dash, lw = 1)
-plot!(f5, [y.path_r for y in out if y.ies==1.0 && y.crra==10.0 && y.β==0.993], linecolor=:red, linestyle=:dot, lw = 1)
+f5 = plot(benchmark.path_r,  linecolor=:blue, lw = 2, size = (1000/3, 500/2))
+plot!(f5, [y.path_r for y in out if y.ies==1.0 && y.crra==2.0 && y.β==0.993], linecolor=:black, linestyle=:dash, lw = 2)
+plot!(f5, [y.path_r for y in out if y.ies==1.0 && y.crra==10.0 && y.β==0.993], linecolor=:red, linestyle=:dot, lw = 2)
 
-savefig(f5, joinpath(@__DIR__, "output", "figures", "CRRA_interest.pdf"))
+savefig(f5, joinpath(_FIGURES_DIR, "CRRA_interest.pdf"))
 
-f6 = plot(benchmark.path_tr./benchmark.y0,  linecolor=:blue, lw = 1)
-plot!(f6, [y.path_tr./y.y0 for y in out if y.ies==1.0 && y.crra==2.0 && y.β==0.993], linecolor=:black, linestyle=:dash, lw = 1)
-plot!(f6, [y.path_tr./y.y0 for y in out if y.ies==1.0 && y.crra==10.0 && y.β==0.993], linecolor=:red, linestyle=:dot, lw = 1)
+f6 = plot(benchmark.path_tr./benchmark.y0,  linecolor=:blue, lw = 2, size = (1000/3, 500/2))
+plot!(f6, [y.path_tr./y.y0 for y in out if y.ies==1.0 && y.crra==2.0 && y.β==0.993], linecolor=:black, linestyle=:dash, lw = 2)
+plot!(f6, [y.path_tr./y.y0 for y in out if y.ies==1.0 && y.crra==10.0 && y.β==0.993], linecolor=:red, linestyle=:dot, lw = 2)
 
-savefig(f6, joinpath(@__DIR__, "output", "figures", "CRRA_transfers.pdf"))
+savefig(f6, joinpath(_FIGURES_DIR, "CRRA_transfers.pdf"))
 
 # ## Tables
 
@@ -239,7 +242,7 @@ push!(transfers,
     Final=[y.path_tr./y.y0 for y in out if y.ies==1.5 && y.crra==5.5 && y.β==0.993][1][end], 
     Min=minimum([y.path_tr./y.y0 for y in out if y.ies==1.5 && y.crra==5.5 && y.β==0.993][1])
     )
-)
+);
 # -
 
 pretty_table([y for y in rates])
