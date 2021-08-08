@@ -8,7 +8,6 @@ using ProgressMeter
 using LoopVectorization
 using LinearAlgebra
 using FastClosures
-using FLoops
 using Tullio
 using NLsolve
 using Plots
