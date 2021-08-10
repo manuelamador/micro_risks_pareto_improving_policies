@@ -17,7 +17,6 @@ using Roots
 using Plots
 using LaTeXStrings
 using PrettyTables
-using FLoops
 
 pgfplotsx();
 Threads.nthreads()
