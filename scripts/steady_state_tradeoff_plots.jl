@@ -119,8 +119,8 @@ let
 
     plot([(eq.s / y0, eq.r) for eq in eq_μ ], color = :black)
     plot!([(get_k(r, t, n0)/y0, r) for r in range(-0.03, 0.01, length = 15)], color = :red)
-    plot!([(k / y0, mpk_from_factors(t, k = k, n = n0) - t.δ) for k in range(2 * y0, 5 * y0, length = 15)],
-        color = :blue, style = :dash)
+    # plot!([(k / y0, mpk_from_factors(t, k = k, n = n0) - t.δ) for k in range(2 * y0, 5 * y0, length = 15)],
+    #     color = :blue, style = :dash)
 
     ylims!(-0.03, 0.01)
     xlims!(0.0, 5)
@@ -144,7 +144,7 @@ let
     vline!([laissez_faire_μ.k / laissez_faire_μ.y], color = :black, lw = 0.75)
 end
 
-savefig(joinpath(@__DIR__, "..", "output", "figures", "CostBenefit_Efficient.pdf"))
+savefig(joinpath(@__DIR__, "..", "output", "figures", "CostBenefit_ConstantK.pdf"))
 
 
 # # Crowding in
@@ -253,7 +253,7 @@ let
     hline!([0], color = :black, lw = 2,legend=false, grid=false)
 end
 
-savefig(joinpath(@__DIR__, "..", "output", "figures", "CostBenefit_Crowdin.pdf"))
+savefig(joinpath(@__DIR__, "..", "output", "figures", "CostBenefit_CrowdIn.pdf"))
 
 # # Competititive Case
 
@@ -375,6 +375,6 @@ let
 end
 # -
 
-savefig(joinpath(@__DIR__, "..", "output", "figures", "CostBenefit_Nomarkup.pdf"))
+savefig(joinpath(@__DIR__, "..", "output", "figures", "CostBenefit_CrowdOut.pdf"))
 
 

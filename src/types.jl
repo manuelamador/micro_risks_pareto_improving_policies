@@ -32,8 +32,8 @@ CRRA(; ra=2.0) = CRRA(ra)
 
 Base.show(io::IO, m::CRRA) = print(io, "CRRA(ra = $(m.par))")
 
-get_ies(u::CRRA) = u.ra
-get_ra(u::CRRA) = u.ra
+intertemporal_aggregator(u::CRRA) = u.ra
+ce_aggregator(u::CRRA) = u.ra
 
 
 # ## Epstein-Zin
@@ -42,7 +42,7 @@ get_ra(u::CRRA) = u.ra
 struct EZ{T1, T2, T3} <: AbstractUtility
     ies::T1 # IES
     ra::T2 # CRRA
-    pars::T3 # Original params
+    pars::T3 # Original params (ies, ra)
 end
 
 Base.show(io::IO, m::EZ) = print(io, "EZ(ies = $(m.pars[1]), ra = $(m.pars[2]))")
@@ -56,8 +56,8 @@ end
 
 EZ(;ies=1/2, ra=2.0) = EZ(ies, ra)
 
-get_ies(u::EZ) = u.ies
-get_ra(u::EZ) = u.ra
+intertemporal_aggregator(u::EZ) = u.ies
+ce_aggregator(u::EZ) = u.ra
 
 
 # ## Disutility of labor

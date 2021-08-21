@@ -402,7 +402,8 @@ out = let
         range[2] = sol.r  # iterating down -- change top value of range
         sol
     end
-    [f(i, b) for (b, i) in enumerate(reverse(0.2:0.2:7.0))]
+#    [f(i, b) for (b, i) in enumerate(reverse(0.2:0.2:7.0))]
+[f(i, b) for (b, i) in enumerate(reverse(0.2:0.2:2.5))]
 end
 push!(out, laissez_faire_2);
 
@@ -415,7 +416,7 @@ f4 = let
     rb = [-eq.r * eq.b / eq.y for eq in out]
     deltark = [(eq.r - laissez_faire_2.r) * eq.k / eq.y for eq in out]
     plot(by, rb,  label = L"- r  b / y", legend = :bottom, size = (1000/3, 500/2))
-    plot!(by, deltark, fillrange = rb, color = 1, alpha = 0.2)
+  #  plot!(by, deltark, fillrange = rb, color = 1, alpha = 0.2)
     plot!(by, deltark, color = 2, label = L" (r - r_0)  k_0 / y")
 end
 
