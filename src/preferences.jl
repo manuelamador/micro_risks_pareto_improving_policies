@@ -3,7 +3,7 @@
 # intertemporal aggregator
 ϕ(::Log, c, v, β) = c^(1 - β) * v^β
 ϕ(u::Power, c, v, β) = ((1 - β) * c^u.m + β * v^u.m)^u.inv
-ϕ(u, c, v, β) = ϕ(get_ies(u), c, v, β)
+ϕ(u, c, v, β) = ϕ(intertemporal_aggregator(u), c, v, β)
 
 
 # certainty equivalent aggregator
@@ -23,7 +23,7 @@ function ce(u::Power, p⃗, v⃗)
     return s ^ u.inv
 end
 
-ce(u, p⃗, v⃗) = ce(get_ra(u), p⃗, v⃗)
+ce(u, p⃗, v⃗) = ce(ce_aggregator(u), p⃗, v⃗)
 
 
 # # Disutility of labor methods
