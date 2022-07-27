@@ -7,11 +7,11 @@
 #       extension: .jl
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.13.8
+#       jupytext_version: 1.11.4
 #   kernelspec:
-#     display_name: Julia 8 threads 1.7.3
+#     display_name: Julia 20 threads 1.7.3
 #     language: julia
-#     name: julia-8-threads-1.7
+#     name: julia-20-threads-1.7
 # ---
 
 # # The present value of asset supply elasticities
@@ -66,6 +66,24 @@ let
     end
     fig
 end
+
+elas = jac ./ e_init.a .* (1 + e_init.r);
+
+let
+    fig = Figure() 
+    ax = Axis(fig[1, 1], xlabel = "s", title = "Elasticities R")
+    for col in elas
+        lines!(ax, col) 
+    end
+    fig
+end
+
+full_jac = jacobian(e_init; cap_t = 1_000, ΔR = 1e-4, ΔT = 0.0);
+full_elas = full_jac ./ e_init.a .* (e_init.r + 1);
+
+f, ax, = lines(full_elas' * ones(size(full_elas, 1)), title = "Elasticities to a permanent increase in R")
+ax.yticks = 0:5:90 
+f
 
 @time jac_T = jacobian_column(1:50:500, e_init; cap_t = 500, cap_s = 500, ΔR = 0.0, ΔT = 1e-4);
 
