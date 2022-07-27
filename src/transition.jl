@@ -1,207 +1,109 @@
 
-###########################################################
-#  Transition methods
-###########################################################
+function _transition_item(h::Household)  
+    v = Array{eltype(h.a_grid)}(undef, length(h.a_grid), length(h.z_grid))
+    η = similar(v) 
+    a_pol = similar(v)
+    pdf = similar(v)
+    lower_index = similar(v, Int)
+    lower_weight = similar(v)
+    a_tmp = similar(v)
+    r = T = a = k = b = zero(eltype(h.a_grid)) 
+    return (; h, v, η, a_pol, pdf, lower_index, lower_weight, a_tmp, r, T, a, k, b)
+end 
 
 
-# Given an optimized path, update the path forward starting from the first distribution
-# in path and update the total asset supply.
-#
-# Note: this function expects that path.pdf[1] contains the initial asset distribution.
-function walk_forward!(path, h)
-    @inbounds for i in eachindex(path)
-        pdf = path.pdf[i]
-        if i < lastindex(path)
-            pdf1 = path.pdf[i + 1]
-            pol = path.pol[i]
-            iterate_pdf!(pdf1, pdf, h, pol)
-        end
-        path.s[i] = asset_supply(h, pdf)
-    end
-end
+function _initialize_path(e_init, e_final; k_path)
+    h = e_init.h
+
+    lst = StructArray(_transition_item(h) for _ in k_path)
+    lst[1].pdf .= e_init.ws.pdf
+
+    lst[end].v .= e_final.ws.v 
+    lst[end].η .= e_final.ws.η
+    lst[end].a_pol .= e_final.ws.a_pol
+    lst[end].lower_index .= e_final.ws.lower_index
+    lst[end].lower_weight .= e_final.ws.lower_weight
+
+    lst.r[end] = e_final.r
+    lst.b[end] = e_final.b
+    lst.k[end] = e_final.k
+    lst.a[end] = e_final.a
+
+    return lst 
+end 
 
 
-# Given a path, a household and a terminal state, final_ss, compute the path of
-# optimal values and policies using r, w, and transfer variables contained in
-# path.
-#
-# Modifies path in place to include the value function and policy functions
-function walk_back!(path, h, final_ss)
-    v0 = final_ss.v
-    for i in reverse(eachindex(path))
-        Aiyagari.optimize_one_period!(
-            (v0, path.v[i], path.pol[i]),
-            h,
-            path.r[i],
-            path.w[i],
-            path.transfer[i]
-        )
-        v0 = path.v[i]
-    end
-end
-
-
-# Preallocates a structarray for a transition of length path_length starting
-# from laissez_faire.
-function prealloc_and_initialize_path(laissez_faire, path_length)
-    path = StructArray(
-        (
-            r = laissez_faire.r,
-            w = laissez_faire.w,  # this should not change
-            transfer = laissez_faire.transfer,
-            v = similar(laissez_faire.v),
-            pol = similar(laissez_faire.pol),
-            pdf = similar(laissez_faire.pdf),
-            s = laissez_faire.s,
-            b = laissez_faire.b,
-            k = laissez_faire.k
-        ) for _ in 1:path_length)
-    path.pdf[1] .= laissez_faire.pdf  # initial distribution
-    return path
-end
-
-
-# Solves from the transition path starting from laissze_faire to final where
-# k and b follow the paths of k_path and b_path.
-#
-# Note that the value of k_path[1] and b_path[1] are ignored, and assumed to
-# equal to the laissez faire values.
-# TODO: Maybe change this ^
 function solve_transition(
-    laissez_faire, final, k_path::AbstractArray, b_path::AbstractArray;
-    init_r_path = nothing,
-    residuals = similar(k_path),
-    kwargs...
+    e_init, e_final; k_path, b_path, r_path = nothing, verbose = true,
+    nlsolve_kwargs = nothing
 )
-    path_length = length(k_path)
-    # Create a function that given index returns the corresponding values
-    # of (k, b) in the path.
-    f = (_, i) -> begin
-        if 1 < i <= path_length
-            b = b_path[i]
-            k = k_path[i]
-        elseif i == 1
-            b = laissez_faire.b
-            k = laissez_faire.k
-        else
-            b = final.b
-            k = final.k
-        end
-        return (k, b)
-    end
+    nlsolve_baseline_kwargs = (
+        ftol = _ZERO_FTOL,
+        show_trace = verbose,
+        method = :anderson,
+        m = 10,
+        iterations = 300,
+        beta = -0.5  # adjustment parameter for the fixed point algorithm
+    )
+    
+    nlsolve_kwargs_merged = isnothing(nlsolve_kwargs) ?             
+        nlsolve_baseline_kwargs :
+        merge(nlsolve_baseline_kwargs, nlsolve_kwargs)
 
-    return solve_transition(
-        f, laissez_faire, final;
-        path_length, init_r_path, residuals, kwargs...)
+    path = _initialize_path(e_init, e_final; k_path)
+
+    if isnothing(r_path) 
+        r_path_rest = [(e_final.r) for _ in 1:length(k_path) - 1]
+    else 
+        r_path_rest = r_path[2:end]
+    end 
+    r_path_rest[end] = e_final.r
+
+    f! = (F, x) -> _residuals!(F, x; path, e_init, k_path, b_path)
+    r_sol = nlsolve(f!, r_path_rest; nlsolve_kwargs_merged...)
+    _residuals!(similar(r_sol.zero), r_sol.zero; path, e_init, k_path, b_path)
+    
+    return path 
 end
 
 
-# Solves from the transition path starting from laissze_faire to final where
-# k and b follow the paths generated by k_b_fun.
-#
-# The function k_b_fun takes an an input and interest rate r and an index i and
-# should return the corresponding a tuple (k, b) representing the value of k and
-# b in that period i given interest rate r.
-function solve_transition(
-    k_b_fun, laissez_faire, final;
-    path_length,
-    init_r_path = nothing,
-    residuals = Vector{typeof(laissez_faire.r)}(undef, path_length),
-    kwargs...
-)
-    nlsolve_kwargs = merge(
-        (
-            ftol = 10^(-6),
-            show_trace = true,
-            method = :anderson,
-            m = 10,
-            iterations = 100,
-            beta = -0.03  # adjustment parameter for the fixed point algorithm
-        ), kwargs
-    )
+function _residuals!(residuals, r_path_rest; path, e_init, k_path, b_path)
+    h = e_init.h
+    t = e_init.t
+    w = e_init.w
+    n0 = e_init.n
+    r0 = e_init.r 
+    k0 = e_init.k
 
-    t = get_t(laissez_faire)
-    h = get_h(laissez_faire)
-
-    # Initializing the path
-    path = prealloc_and_initialize_path(laissez_faire, path_length) # and we start from laissez_faire
-    # Initializing s_list: s_list will contain the path of savings consistent with k + b
-    s_list = Vector{typeof(laissez_faire.r)}(undef, path_length)
-    # Initializing the guess for the transfer sequence.
-    if init_r_path === nothing
-        r_list = [laissez_faire.r for _ in 1:path_length]
-    else
-        r_list = init_r_path
-        r_list[i] = laissez_faire.r # Makes sure that initial r does not change
-                                    # as it won't get updated below 
-                                    # TODO: fixed algorithm to remove first r below
-    end
-
-    # Precomputing some values
-    precomputed = (
-        - t.δ + eps(),         # minimum interest rate
-        1 / h.β - 1 - eps(),   # maximum interest rate
-        minimum_feasible_transfer(h, laissez_faire.w) + eps()
-    )
-
-    # Creating the function to be solved for a root (F: residuals, x: path of r)
-    f! = (F, x) -> _transition_errors!(F, path, s_list, x; k_b_fun, final, laissez_faire, precomputed)
-
-    # Look for a path of r that solves market clearing
-    nlsolve(f!, r_list; nlsolve_kwargs...)
-    f!(residuals, path.r) # store the residuals
-
-    return (path = path, init = laissez_faire, final = final, residuals = residuals)
-end
-
-
-# Helper function to compute the errors in market clearing along a transition path.
-#
-#   `residuals`, `path`, `s_list` are mutated.
-function _transition_errors!(residuals, path, s_list,  r_list; k_b_fun, final, laissez_faire, precomputed)
-    t = get_t(laissez_faire)
-    h = get_h(laissez_faire)
-
-    r_min, r_max, tr_min = precomputed
-
-    n0 = laissez_faire.n
-    resource = laissez_faire.y - (t.δ + laissez_faire.r) * laissez_faire.k
-
-    kprime = final.k
-    bprime = final.b
-    sprime = final.s
-    @inbounds for i in reverse(eachindex(path))
-        r = clamp(r_list[i], r_min, r_max)  # r should be within (rmin, r_max)
-        k, b = k_b_fun(r, i)  # get the k, b according to r and period i
-
-        # Get the total S, assign to s_list
-        s = i > 1 ? k + b : laissez_faire.s
-        s_list[i] = s
-        # Use resource constraint to solve for aggregate c
-        c = output(t, k = k, n = n0) + (1 - t.δ) * k - kprime
-
-        # Assign to path
+    r_min = - t.δ + eps()  # minimum interest rate
+    r_max = 1 / h.u.β  # a maximum -- could be relaxed
+    min_T = minimum_feasible_transfer(h, w) + eps() # minimum transfer
+    
+    @inbounds for i in reverse(1:length(r_path_rest))
+        r = (i == 1) ? r0 : r_path_rest[i-1]
+        r = clamp(r, r_min, r_max)
+        T_ = get_T(t; 
+            b = b_path[i], bprime = b_path[i+1],
+            r = r, k = k_path[i], 
+            k0, r0, n0)
+        T = max(T_, min_T)   
+        path.T[i] = T
         path.r[i] = r
-        path.b[i] = b
-        path.k[i] = k
-        path.transfer[i] = max(c - resource  + sprime - (1 + r) * s, tr_min)
-
-        # Before moving back one period, reassigned the prime variables
-        bprime = b
-        kprime = k
-        sprime = s
+        R = 1 + r
+        backwards_once!(path[i].v, path[i].η; path[i+1].v, path[i+1].η, h, R, T, w)
+        asset_policy_given_η!(path[i].a_pol; h, path[i].η, R, T, w)
+        interpolate_asset_policy!(path[i].lower_index, path[i].lower_weight; h.a_grid, path[i].a_pol)
     end
 
-    # Solve for the optimal policy backwards, and update path.v and path.pol
-    walk_back!(path, h, final)
-    # Update path.pdf and path.s by iterating forward
-    walk_forward!(path, h)
-
-    # All fields of path are now updated (except for path.w which is unchanged)
-
-    # Compute the difference between the household saving and the market
-    # total savings. This is the error.
-    @turbo for i in eachindex(path)
-        residuals[i] = (path.s[i] - s_list[i]) / s_list[i]
+    @inbounds for i in 1:length(r_path_rest) + 1 
+        a = asset_supply(h.a_grid, path[i].pdf)
+        path.a[i] = a
+        path.b[i] = b_path[i]
+        path.k[i] = k_path[i]
+        if i > 1
+            residuals[i-1] =  a - k_path[i] - b_path[i]
+        end
+        (i == length(r_path_rest) + 1) && break
+        forward_pdf!(path[i+1].pdf; h, path[i].pdf, path[i].lower_index, path[i].lower_weight)
     end
-end
+end 
