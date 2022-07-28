@@ -17,7 +17,7 @@ The subfolder `output` contains the figures generates by the script.
 
 ## Running the code 
 
-The code is in [Julia](https://julialang.org/downloads/). The code uses multithreading if available, so make sure to start julia with the ability to run multiple threads. See [Julia Multi-threading](https://docs.julialang.org/en/v1/manual/multi-threading/#man-multithreading).
+The code is written in [Julia](https://julialang.org/downloads/). The code uses multithreading if available, so make sure to start julia with the ability to run multiple threads. See [Julia Multi-threading](https://docs.julialang.org/en/v1/manual/multi-threading/#man-multithreading).
 
 To run the code, open a julia prompt at the root of this repository. 
 Then type:
@@ -26,17 +26,13 @@ Then type:
     julia> Pkg.activate(".")
     julia> Pkg.instantiate()
 
-The above will download the packages needed to run the code.
+The above will download the Julia packages needed to run the programs.
 
-
-To run the jupyter notebook, do:
+To run the main script that generates the figures and statistics, do:
   
-    julia> using IJulia
-    julia> notebook(dir=".")
-  
-That should open a browser with [Jupyter](https://jupyter.org/) . Navigate to `scripts` to locate the notebook. 
+    julia> include(joinpath("scripts", "paper_figures_tables.jl")) 
+    
+The script takes about   minutes to run a in a server with AMD EPYC 7542 32-Core Processor with 20 cores available and 32GB of RAM.  
 
-Associated with the Jupyter notebook, there is a Julia script (`.jl`) that can be run instead. 
-
-   
+Associated with the script, there is a Jupyter notebook that can be run instead. Run [Jupyter](https://jupyter.org/) and navigate to `scripts` to locate the notebook and run it.
 
