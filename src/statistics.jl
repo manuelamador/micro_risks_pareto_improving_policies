@@ -3,6 +3,7 @@
 
 function summary_statics(
     e;
+    iobuffer = stdout,
     laissez_faire = nothing, path = nothing
 )
     h = e.h
@@ -10,44 +11,44 @@ function summary_statics(
 
     pdf = sum(e.ws.pdf, dims=2)[:, 1]
 
-    println("\nFISCAL")
-    println("debt: ", e.b)
-    println("debt over y (%): ", e.b / y(e) * 100)
-    println("transfer over y (%): ", 100 * e.T / y(e))
-    println("interest rate: ", e.r)
+    println(iobuffer, "\nFISCAL")
+    println(iobuffer, "debt: ", e.b)
+    println(iobuffer, "debt over y (%): ", e.b / y(e) * 100)
+    println(iobuffer, "transfer over y (%): ", 100 * e.T / y(e))
+    println(iobuffer, "interest rate: ", e.r)
 
-    println("\nAGGREGATES")
-    println("capital over y: ", e.k / y(e))
+    println(iobuffer, "\nAGGREGATES")
+    println(iobuffer, "capital over y: ", e.k / y(e))
 
-    println("\nHOUSEHOLDS")
+    println(iobuffer, "\nHOUSEHOLDS")
 
     con = consumption_alloc(h; R = 1 + e.r, e.w, e.T, e.ws.a_pol)
     con = reshape(con, 1, :)[1, :]
     allpdf = reshape(e.ws.pdf, 1, :)[1, :]
     std_con = 100 * StatsBase.std(log.(con), StatsBase.ProbabilityWeights(allpdf))
-    println("standard deviation of log c (*100): ", std_con, "\n")
-    println("mass of constrained households (%): ", 100 * sum(e.ws.pdf[1, :]))
+    println(iobuffer, "standard deviation of log c (*100): ", std_con, "\n")
+    println(iobuffer, "mass of constrained households (%): ", 100 * sum(e.ws.pdf[1, :]))
 
     s = asset_supply(a_grid, e.ws.pdf)
-    println("mean wealth (over y): " , s / y(e))
-    println("median wealth (over y): ",
+    println(iobuffer, "mean wealth (over y): " , s / y(e))
+    println(iobuffer, "median wealth (over y): ",
         quantile(a_grid , StatsBase.ProbabilityWeights(pdf), 0.5) / y(e))
 
     qu = [quantile(a_grid, StatsBase.ProbabilityWeights(pdf), x) for x in 0.0:0.20:1.0]
 
     total = sum(a_grid .* pdf)
     dist = [sum((a_grid .<= qi) .* (a_grid .* pdf)) * 100 / total for qi in qu] |> diff
-    println("share of wealth per asset quintiles:\n   $dist")
+    println(iobuffer, "share of wealth per asset quintiles:\n   $dist")
 
     if path !== nothing && laissez_faire !== nothing
-        println("\nTRANSITION")
+        println(iobuffer, "\nTRANSITION")
 
         w_gains = 100 .* (path.v[1] ./ laissez_faire.ws.v .- 1)
 
         m1 = minimum(w_gains[laissez_faire.ws.pdf .> 0])
         m2 = maximum(w_gains[laissez_faire.ws.pdf .> 0])
         m3 = sum(w_gains .* laissez_faire.ws.pdf)
-        println("welfare gain in transition: min = $m1,  max = $m2,  mean = $m3")
+        println(iobuffer, "welfare gain in transition: min = $m1,  max = $m2,  mean = $m3")
 
         wgains_summary = Float64[]
 
@@ -70,7 +71,7 @@ function summary_statics(
             push!(wgains_summary, mean(w_gains_rs, ProbabilityWeights(weight_rs)))
         end
 
-        println("mean welfare gain per asset decile:\n $wgains_summary")
+        println(iobuffer, "mean welfare gain per asset decile:\n $wgains_summary")
     end
 end
 

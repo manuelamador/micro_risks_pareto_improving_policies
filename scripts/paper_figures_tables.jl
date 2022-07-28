@@ -129,24 +129,30 @@ b_path_3 = [0.0 for _ in k_path_2];
 # ## Statistics
 
 # +
-println("INITIAL STEADY STATE")
-println("=====================")
-summary_statics(e_init)
+statistics = let
+    iobuffer = IOBuffer()
+
+    println(iobuffer, "INITIAL STEADY STATE")
+    println(iobuffer,"=====================")
+    summary_statics(e_init; iobuffer)
 
 
-println("\nFINAL STEADY STATE -- CONSTANT K AND DEBT")
-println("=====================")
-summary_statics(e_final,
-    laissez_faire = e_init,
-    path = path)
+    println(iobuffer, "\nFINAL STEADY STATE -- CONSTANT K AND DEBT")
+    println(iobuffer, "=====================")
+    summary_statics(e_final;
+        laissez_faire = e_init,
+        path = path, iobuffer)
 
 
-println("\nFINAL STEADY STATE -- GOLDEN K AND DEBT")
-println("=====================")
-summary_statics(e_final_2,
-    laissez_faire = e_init,
-    path = path_2)
+    println(iobuffer, "\nFINAL STEADY STATE -- GOLDEN K AND DEBT")
+    println(iobuffer, "=====================")
+    summary_statics(e_final_2;
+        laissez_faire = e_init,
+        path = path_2, iobuffer)
 
+    String(take!(iobuffer))
+end
+println("\n", statistcs, "\n")
 # -
 
 # ##  Plots
@@ -513,7 +519,7 @@ fig_pv_GE = let lst = lst_GE
     fig 
 end 
 
-# ## Saving The Figures
+# ## Saving the Figures and Statistics
 
 save(joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_fixed_k.pdf"), f1)
 save(joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_golden_k.pdf"), f2)
@@ -522,3 +528,7 @@ save(joinpath(@__DIR__, "..", "output", "figures", "steady_state_transfers.pdf")
 
 save(joinpath(@__DIR__, "..", "output", "figures", "pv_elasticities_regions_PE.pdf"), fig_pv_PE);
 save(joinpath(@__DIR__, "..", "output", "figures", "pv_elasticities_regions_GE.pdf"), fig_pv_GE);
+
+open(joinpath(@__DIR__, "..", "output", "tables", "statistics.txt"), "w") do file
+    write(file, statistics)
+end
