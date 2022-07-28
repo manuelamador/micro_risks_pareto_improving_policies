@@ -32,7 +32,7 @@ To run the main script that generates the figures and statistics, do:
   
     julia> include(joinpath("scripts", "paper_figures_tables.jl")) 
     
-The script takes about   minutes to run a in a server with AMD EPYC 7542 32-Core Processor with 20 cores available and 32GB of RAM.  
+The script takes about 50 minutes to run a in a server with AMD EPYC 7542 32-Core Processor with 20 cores available and 32GB of RAM.  
 
 Associated with the script, there is a Jupyter notebook that can be run instead. Run [Jupyter](https://jupyter.org/) and navigate to `scripts` to locate the notebook and run it.
 
