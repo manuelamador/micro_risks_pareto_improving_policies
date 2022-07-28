@@ -128,7 +128,6 @@ b_path_3 = [0.0 for _ in k_path_2];
 
 # ## Statistics
 
-# +
 statistics = let
     iobuffer = IOBuffer()
 
@@ -152,8 +151,7 @@ statistics = let
 
     String(take!(iobuffer))
 end
-println("\n", statistcs, "\n")
-# -
+println("\n", statistics, "\n")
 
 # ##  Plots
 
