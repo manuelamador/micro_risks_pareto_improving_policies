@@ -85,6 +85,11 @@ k_path = [e_init.k for _ in b_path];
 @time path = solve_transition(e_init, e_final; k_path, b_path, 
                 nlsolve_kwargs = (; ftol = 1e-7));
 
+# Implied aggreate savings elasticities: 
+
+elas = b_path ./ (path.r .- e_init.r) ./ (e_init.a) .* (1 + e_init.r)
+( elas[2], elas[end] )
+
 # ## Transition Towards Golden Rule
 
 k_golden = golden_rule_k(t; e_init.n)
