@@ -12,6 +12,20 @@ end
 
 # Household's euler equation 
 
+
+function backwards_euler_x(u::CRRA, π_vec, η_vec)
+    ξ = get_inverse_ies(u)
+    β = get_β(u)
+    Evx = zero(eltype(η_vec))
+    @inbounds for i in eachindex(π_vec)
+        η = η_vec[i]
+        Evx += π_vec[i] * (η)^(-ξ)
+    end 
+    x = (β * Evx)^(-1 / ξ)
+    return x
+end
+
+
 function backwards_euler_x(u::EZ, π_vec, v_vec, η_vec)
     ξ = get_inverse_ies(u)
     γ = get_ra(u)
@@ -28,28 +42,57 @@ function backwards_euler_x(u::EZ, π_vec, v_vec, η_vec)
 end
 
 
+function backwards_once!(h, current_values; next_values, R, T, w, a_tmp = similar(current_values.η))   
+    η_now = current_values.η
+
+    (; u, P) = h
+    ξ = get_inverse_ies(u)
+
+    @batch for s in eachindex(h.z_grid)
+        z = h.z_grid[s]
+        dis = disutility_given_w(h.v; w = w * z)
+        lab = labor_income(h.v; w = w * z)
+
+        @inbounds for i in eachindex(h.a_grid)
+            x = _backwards_euler_x_helper(h.u, P, i, s, next_values)
+            c = x + dis
+            a_next = h.a_grid[i]
+            a_tmp[i, s]  = (c + a_next - lab - T) / R
+        end
+
+        @inbounds for i in eachindex(h.a_grid)
+            a = h.a_grid[i]
+            a_prime = interp1D(a, view(a_tmp, :, s), h.a_grid)
+            a_prime = clamp(a_prime, first(h.a_grid), last(h.a_grid))
+            max_feasible_a_prime = R * a + T + lab - dis
+            x = max_feasible_a_prime - a_prime
+            η_now[i, s] = R^(-1/ξ) * x
+            _extra_updates!(u, current_values, next_values, h, a_prime, P, x, i, s)
+        end
+    end    
+end
+
+_backwards_euler_x_helper(u::CRRA, P, i, s, next_values) = backwards_euler_x(u, view(P, s, :), view(next_values.η, i, :))
+_backwards_euler_x_helper(u::EZ, P, i, s, next_values) = backwards_euler_x(u, view(P, s, :), view(next_values.v, i, :), view(next_values.η, i, :))
+
+_extra_updates!(::CRRA, args...) = nothing
+function _extra_updates!(u::EZ, current_values, next_values, h, a_prime, P, x, i, s)
+    β = u.β
+
+    Ev = zero(a_prime)
+    for s2 in axes(next_values.v, 2)
+        v_prime = interp1D(a_prime, h.a_grid, view(next_values.v, :, s2))
+        Ev += P[s, s2] * u.risk(v_prime)
+    end
+    current_values.v[i, s] =
+        inverse(u.temporal, (1 - β) * u.temporal(x) + β * u.temporal(inverse(u.risk, Ev)))
+end 
+
+
 function asset_policy_given_η!(a_pol; h, η, R, T, w)
     ξ = get_inverse_ies(h.u) 
     @tullio a_pol[i, s] = R * h.a_grid[i] + T + labor_income(h.v; w = w * h.z_grid[s]) -  η[i, s] * R^(1/ξ) - disutility_given_w(h.v; w = w * h.z_grid[s])
 end
-
-
-# function asset_policy_given_η!(a_pol; h, η, R, T, w)
-#     ξ = get_inverse_ies(h.u) 
-#     @batch for s in eachindex(h.z_grid)
-#         z = h.z_grid[s]
-#         dis = disutility_given_w(h.v; w = w * z)
-#         lab = labor_income(h.v; w = w * z)
-#         @inbounds for i in eachindex(h.a_grid)
-#             x = η[i, s] * R^(1/ξ)
-#             c = x + dis
-#             a = h.a_grid[i]
-#             a_prime = R * a + T + lab - c 
-#             a_pol[i, s] = a_prime 
-#         end 
-#     end 
-# end
-
 
 asset_policy_given_η!(ws::HouseholdWorkspace; R, T, w) = asset_policy_given_η!(ws.a_pol; ws.h, ws.η, R, T, w) 
 
@@ -67,67 +110,21 @@ function interpolate_asset_policy!(lower_index, lower_weight; a_grid, a_pol)
     end 
 end
 
-
 interpolate_asset_policy!(ws::HouseholdWorkspace) = interpolate_asset_policy!(ws.lower_index, ws.lower_weight; ws.h.a_grid, ws.a_pol)
 
 
-function backwards_once!(v_now, η_now; v, η, h, R, T, w, a_tmp = similar(v_now))   
-    v_next, η_next = v, η
-    (; u, P) = h
-    ξ = get_inverse_ies(u)
-    β = get_β(u)
-
-    @batch for s in eachindex(h.z_grid)
-        z = h.z_grid[s]
-        dis = disutility_given_w(h.v; w = w * z)
-        lab = labor_income(h.v; w = w * z)
-
-        @inbounds for i in eachindex(h.a_grid)
-            x = backwards_euler_x(h.u, view(P, s, :), view(v_next, i, :), view(η_next, i, :))
-            c = x + dis
-            a_next = h.a_grid[i]
-            a_tmp[i, s]  = (c + a_next - lab - T) / R
-        end
-
-        @inbounds for i in eachindex(h.a_grid)
-            a = h.a_grid[i]
-            a_prime = interp1D(a, view(a_tmp, :, s), h.a_grid)
-            a_prime = clamp(a_prime, first(h.a_grid), last(h.a_grid))
-            max_feasible_a_prime = R * a + T + lab - dis
-            
-            # a_prime = min(max_feasible_a_prime, a_prime)
-            x = max_feasible_a_prime - a_prime
-            Ev = zero(a)
-            for s2 in axes(v_next, 2)
-                v_prime = interp1D(a_prime, h.a_grid, view(v_next, :, s2))
-                Ev += P[s, s2] * u.risk(v_prime)
-            end
-            v_now[i, s] =
-                inverse(u.temporal, (1 - β) * u.temporal(x) + β * u.temporal(inverse(u.risk, Ev)))
-
-            η_now[i, s] = R^(-1/ξ) * x
-        end
-    end    
-end
-
-
-function stationary( 
-    h; R, T, w, 
-    max_iters = _MAX_ITERS, 
-    print_every = 100, 
-    value_tol = _TOL,
-    policy_tol = _TOL,
-    pdf_tol = _TOL, 
-    verbose = true
-)
+function stationary(h; R, T, w, kwargs...)
     ws = HouseholdWorkspace(; h, R, T, w)
-    stationary!(ws; R, T, w, max_iters, print_every, value_tol, policy_tol, pdf_tol, verbose)
+    stationary!(ws; R, T, w, kwargs...)
     return ws
 end 
 
 
+stationary!(ws; R, T, w, kwargs...) = stationary!(ws.h.u, ws; R, T, w, kwargs...)
+
+
 function stationary!(
-    ws; 
+    ::EZ, ws; 
     R, T, w, 
     max_iters = _MAX_ITERS, print_every = 100, 
     value_tol = _TOL,
@@ -137,33 +134,69 @@ function stationary!(
 )
 
     (; h, v, η, v_tmp, η_tmp, a_tmp) = ws
-    v_0, η_0 = v, η
-    v_1, η_1 = v_tmp, η_tmp
+    v_η_0 = (; v = v, η = η)
+    v_η_1 = (; v = v_tmp, η = η_tmp)
     i = 1
     while true
-        backwards_once!(v_1, η_1; h, v = v_0, η = η_0, R, T, w, a_tmp = a_tmp)
-        dis1 = chebyshev(v_0, v_1)
+        backwards_once!(h, v_η_1; next_values = v_η_0, R, T, w, a_tmp = a_tmp)
+        dis1 = chebyshev(v_η_0.v, v_η_1.v)
         if dis1 < value_tol 
             # checked that policy converged too 
-            dis2 = chebyshev(η_0, η_1)
+            dis2 = chebyshev(v_η_0.η, v_η_1.η)
             if dis2 < policy_tol
                 verbose && println("Converged. iter $i;  R = $R, T = $T, w = $w, |v|: $dis1 , |η| : $dis2")
                 break
             end
         end 
         if i > max_iters
-            dis2 = chebyshev(η_0, η_1) 
+            dis2 = (v_η_0.η, v_η_1.η)
             @warn("Max iters reached. DID NOT CONVERGE! R = $R, T = $T, w = $w,  |v|: $dis1 , |η| : $dis2")
             break
         end 
         verbose && (i % print_every == 1) && println("iter $i: $dis1") 
         i += 1
-
-        v_0, v_1  = v_1, v_0
-        η_0, η_1  = η_1, η_0
+        v_η_0, v_η_1 = v_η_1, v_η_0
     end
     # v, η store the final answer
-    ws.v .= v_0
+    ws.v .= v_η_0.v
+    ws.η .= v_η_0.η
+
+    asset_policy_given_η!(ws; R, T, w)
+    interpolate_asset_policy!(ws)
+    update_stationary_pdf!(ws; tol = pdf_tol)
+
+end 
+
+
+function stationary!(
+    ::CRRA, ws; 
+    R, T, w, 
+    max_iters = _MAX_ITERS, print_every = 100, 
+    policy_tol = _TOL,
+    pdf_tol = _TOL, 
+    verbose = true
+)
+
+    (; h, η, η_tmp, a_tmp) = ws
+    η_0 = η
+    η_1 = η_tmp
+    i = 1
+    while true
+        backwards_once!(h, (; η = η_1); next_values = (; η = η_0), R, T, w, a_tmp = a_tmp)
+        dis1 = chebyshev(η_0, η_1)
+        if dis1 < policy_tol 
+            verbose && println("Converged. iter $i;  R = $R, T = $T, w = $w, |η|: $dis1")
+            break
+        end 
+        if i > max_iters
+            @warn("Max iters reached. DID NOT CONVERGE! R = $R, T = $T, w = $w,  |η|: $dis1")
+            break
+        end 
+        verbose && (i % print_every == 1) && println("iter $i: $dis1") 
+        i += 1
+        η_0, η_1  = η_1, η_0
+    end
+    # η stores the final answer
     ws.η .= η_0
 
     asset_policy_given_η!(ws; R, T, w)
@@ -209,35 +242,11 @@ function update_stationary_pdf!(ws; tol = _TOL, max_iters = 10_000, print_every 
 end 
 
 
-# function asset_supply(a_grid, pdf)
-#     tot = zero(eltype(pdf))
-#     @inbounds for s in axes(pdf, 2)
-#         for i in axes(pdf, 1)
-#             tot += a_grid[i] * pdf[i, s]
-#         end
-#     end 
-#     return tot
-# end
-
 asset_supply(a_grid, pdf) = @tullio s := a_grid[i] * pdf[i, s]
 
 
 aggregate_c(h; R, w, T, a_pol, pdf) = @tullio threads=true tot :=  (R * h.a_grid[i] + T + labor_income(h.v; w = w * h.z_grid[s]) - a_pol[i, s]) * pdf[i, s]
 
-
-# function aggregate_c(h; R, w, T, a_pol, pdf)
-#     (; z_grid,  a_grid) = h
-#     tot = zero(eltype(pdf))
-#     @inbounds for s in axes(pdf, 2)
-#         for i in axes(pdf, 1)
-#             tot += (R * a_grid[i] + T + labor_income(h.v; w = w * z_grid[s]) - a_pol[i, s]) * pdf[i, s]
-#         end
-#     end
-#     return tot
-# end
-
-
-# labor_supply(h::Household; w) = @tullio s := h.Pss[i] * h.z_grid[i] * labor(h.v, w = w * h.z_grid[i])
 
 function labor_supply(h::Household; w)
     (; v, z_grid, Pss) = h

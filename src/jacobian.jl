@@ -33,11 +33,10 @@ function reset!(cache::JacobianCache, ws::HouseholdWorkspace; R, T, w, ΔR, ΔT)
     cache.down[1].pdf .= ws.pdf
     for (path, R1, T1) in [ (cache.up, R + ΔR, T + ΔT), (cache.down, R - ΔR, T - ΔT)]
         for i in cap_t:-1:1 
-            v = (i >= cap_t) ? ws.v : path[i + 1].v 
-            η = (i >= cap_t) ? ws.η : path[i + 1].η
+            next_values = (i >= cap_t) ? ws : path[i + 1] 
             R0 = (i == cap_s) ? R1 : R
             T0 = (i == cap_s) ? T1 : T  
-            backwards_once!(path[i].v, path[i].η; v, η, h, R = R0, T  = T0, w, path[i].a_tmp)
+            backwards_once!(h, path[i]; next_values = next_values, R = R0, T  = T0, w, path[i].a_tmp)
             asset_policy_given_η!(path[i].a_pol; h, path[i].η, R = R0, T = T0, w)
             interpolate_asset_policy!(path[i].lower_index, path[i].lower_weight; h.a_grid, path[i].a_pol)
         end

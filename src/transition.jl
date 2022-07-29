@@ -90,7 +90,7 @@ function _residuals!(residuals, r_path_rest; path, e_init, k_path, b_path)
         path.T[i] = T
         path.r[i] = r
         R = 1 + r
-        backwards_once!(path[i].v, path[i].η; path[i+1].v, path[i+1].η, h, R, T, w)
+        backwards_once!(h, path[i]; next_values = path[i+1], R, T, w, path[i].a_tmp)
         asset_policy_given_η!(path[i].a_pol; h, path[i].η, R, T, w)
         interpolate_asset_policy!(path[i].lower_index, path[i].lower_weight; h.a_grid, path[i].a_pol)
     end

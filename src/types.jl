@@ -40,7 +40,22 @@ Base.show(io::IO, m::EZ) = print(io, "EZ(ra=$(get_ra(m)), ies=$(get_ies(m)), β=
 
 EZ(;ies=1/2.0, ra=2.0, β) = EZ(ra == 1 ? (@warn("Log aggregator for risk not yet implemented. Code may break"); Log()) : Power(ra), ies == 1 ? Log() : Power(1/ies), β)
 
-CRRA(ra; β) = EZ(;ra = ra, ies = 1/ra, β)
+
+# CRRA 
+
+struct CRRA{T1<:AbstractSubUtility, T3} <: AbstractUtility
+    risk::T1 # RA
+    β::T3
+end
+
+get_ra(m::CRRA) = get_power(m.risk)
+get_inverse_ies(m::CRRA) = get_power(m.risk)  
+get_ies(m::CRRA) = 1/get_power(m.risk)
+get_β(m::CRRA) = m.β
+
+Base.show(io::IO, m::CRRA) = print(io, "CRRA(ra=$(get_ra(m)), β=$(m.β))")
+
+CRRA(; ra=2.0, β) = CRRA(ra == 1 ? Log() : Power(ra), β)
 
 
 # ## Disutility of labor
@@ -68,7 +83,7 @@ Base.show(io::IO, m::GHH) = print(io, "GHH(θ=$(m.θ), ν=$(m.ν))")
 #######################################################
 
 Base.@kwdef struct Household{U<:AbstractUtility, V, M1, M2, M3, M4}
-    u::U = CRRA(2; β = 0.95)
+    u::U = CRRA(; ra = 2, β = 0.95)
     v::V = GHH()
     z_grid::M1 = [0.5, 1.0]
     P::M2 = [0.5 0.5; 0.2 0.8]

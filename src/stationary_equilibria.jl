@@ -3,14 +3,11 @@
 function stationary_laissez_faire(h, t; r_range, 
     verbose = true, 
     hh_problem_kwargs = nothing,
-    find_zero_pars = (;atol = _ZERO_FTOL)
+    find_zero_kwargs = (;atol = _ZERO_FTOL),
+    solver = A42()
 )
 
     hh_problem_options_baseline = (; 
-        value_tol = _TOL, 
-        policy_tol = _TOL, 
-        pdf_tol = _TOL,
-        max_iters = _MAX_ITERS,
         verbose = false
     ) 
 
@@ -25,7 +22,7 @@ function stationary_laissez_faire(h, t; r_range,
     ws = HouseholdWorkspace(; h, pars...)
 
     f = (r) -> _laissez_faire!(ws, r, h, t, verbose, stationary_kwargs).excess 
-    r = find_zero(f, r_range, A42(); find_zero_pars...)
+    r = find_zero(f, r_range, solver; find_zero_kwargs...)
     (; w, n, k, a) = _laissez_faire!(ws, r, h, t, false, stationary_kwargs)
 
     e = StationaryEquilibrium(;
@@ -52,14 +49,11 @@ end
 function stationary_equilibrium_given_k_b(e_init, k, b; r_range, 
     verbose = true,   
     hh_problem_kwargs = nothing,
-    find_zero_pars = (; atol = _ZERO_FTOL)
+    solver = A42(), 
+    find_zero_kwargs = (; atol = _ZERO_FTOL)
 )
 
     hh_problem_options_baseline = (; 
-        value_tol = _TOL, 
-        policy_tol = _TOL, 
-        pdf_tol = _TOL,
-        max_iters = _MAX_ITERS,
         verbose = false
     ) 
 
@@ -78,7 +72,7 @@ function stationary_equilibrium_given_k_b(e_init, k, b; r_range,
     min_T = minimum_feasible_transfer(h, w0)
 
     f = (r) -> _k_b_excess!(ws, r, e_init, k, b, min_T, verbose, stationary_kwargs).excess
-    r = find_zero(f, r_range, A42(); find_zero_pars...)
+    r = find_zero(f, r_range, solver; find_zero_kwargs...)
     (; a, T) = _k_b_excess!(ws, r, e_init, k, b, min_T, false, stationary_kwargs)
 
     e = StationaryEquilibrium(; h, t, ws, w = w0, n = n0, k, a, r, b, T)

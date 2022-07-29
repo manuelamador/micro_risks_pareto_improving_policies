@@ -27,7 +27,7 @@ const _MAX_ITERS = 20_000
 export 
 
 # types.jl 
-    EZ, GHH, Household, HouseholdWorkspace, CobbDouglasTechnology, JacobianCache,
+    CRRA, EZ, GHH, FixedLabor, Household, HouseholdWorkspace, CobbDouglasTechnology, JacobianCache,
 
 # calibration.jl
     calibration, 
