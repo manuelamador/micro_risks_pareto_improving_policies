@@ -82,8 +82,7 @@ k_path = [e_init.k for _ in b_path];
 
 # Solving the transition 
 
-@time path = solve_transition(e_init, e_final; k_path, b_path, 
-                nlsolve_kwargs = (; ftol = 1e-7));
+@time path = solve_transition(e_init, e_final; k_path, b_path);
 
 # Implied aggreate savings elasticities: 
 
@@ -110,8 +109,7 @@ k_path_2 = let
     k_path_2
     end;
 
-@time path_2 = solve_transition(e_init, e_final_2; k_path = k_path_2, b_path, 
-    nlsolve_kwargs = (; beta = -.03, ftol = 1e-7));
+@time path_2 = solve_transition(e_init, e_final_2; k_path = k_path_2, b_path);
 
 # ## Transition To Golden Rule Without Debt 
 
@@ -122,9 +120,7 @@ end
 
 b_path_3 = [0.0 for _ in k_path_2];
 
-@time path_3 = solve_transition(e_init, e_final_3; 
-    k_path = k_path_2, b_path = b_path_3, 
-    nlsolve_kwargs = (; beta = -.03, ftol = 1e-7));
+@time path_3 = solve_transition(e_init, e_final_3; k_path = k_path_2, b_path = b_path_3);
 
 # ## Statistics
 

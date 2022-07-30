@@ -23,6 +23,7 @@ include("jacobian.jl")
 const _TOL = 1e-12
 const _ZERO_FTOL = 1e-08
 const _MAX_ITERS = 20_000
+const _ZERO_MAX_ITERS = 300
 
 export 
 
