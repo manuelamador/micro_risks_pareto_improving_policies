@@ -50,9 +50,9 @@ export
     summary_statics, 
 
 # jacobian.jl 
-    pv_elasticities, pv_elasticities!, jacobian_column, jacobian,
+    pv_elasticities, pv_elasticities!, jacobian_row, jacobian,
 
-#auxiliary_functions.jl
+# auxiliary_functions.jl
     grid
 
 end

@@ -32,40 +32,39 @@ function _initialize_path(e_init, e_final; k_path)
     return lst 
 end 
 
-# OLD SOLVER -- COULD SERVE AS BACKUP 
-# 
-# function solve_transition(
-#     e_init, e_final; k_path, b_path, r_path = nothing, verbose = true,
-#     nlsolve_kwargs = nothing
-# )
-#     nlsolve_baseline_kwargs = (
-#         ftol = _ZERO_FTOL,
-#         show_trace = verbose,
-#         method = :anderson,
-#         m = 10,
-#         iterations = 300,
-#         beta = -0.5  # adjustment parameter for the fixed point algorithm
-#     )
+
+function solve_transition_slow_but_robust(
+    e_init, e_final; k_path, b_path, r_path = nothing, verbose = true,
+    nlsolve_kwargs = nothing
+)
+    nlsolve_baseline_kwargs = (
+        ftol = _ZERO_FTOL,
+        show_trace = verbose,
+        method = :anderson,
+        m = 10,
+        iterations = _ZERO_MAX_ITERS,
+        beta = -0.1  # adjustment parameter for the fixed point algorithm
+    )
     
-#     nlsolve_kwargs_merged = isnothing(nlsolve_kwargs) ?             
-#         nlsolve_baseline_kwargs :
-#         merge(nlsolve_baseline_kwargs, nlsolve_kwargs)
+    nlsolve_kwargs_merged = isnothing(nlsolve_kwargs) ?             
+        nlsolve_baseline_kwargs :
+        merge(nlsolve_baseline_kwargs, nlsolve_kwargs)
 
-#     path = _initialize_path(e_init, e_final; k_path)
+    path = _initialize_path(e_init, e_final; k_path)
 
-#     if isnothing(r_path) 
-#         r_path_rest = [(e_final.r) for _ in 1:length(k_path) - 1]
-#     else 
-#         r_path_rest = r_path[2:end]
-#     end 
-#     r_path_rest[end] = e_final.r
+    if isnothing(r_path) 
+        r_path_rest = [(e_final.r) for _ in 1:length(k_path) - 1]
+    else 
+        r_path_rest = r_path[2:end]
+    end 
+    r_path_rest[end] = e_final.r
 
-#     f! = (F, x) -> _residuals!(F, x; path, e_init, k_path, b_path)
-#     r_sol = nlsolve(f!, r_path_rest; nlsolve_kwargs_merged...)
-#     _residuals!(similar(r_sol.zero), r_sol.zero; path, e_init, k_path, b_path)
+    f! = (F, x) -> _residuals!(F, x; path, e_init, e_final, k_path, b_path)
+    r_sol = nlsolve(f!, r_path_rest; nlsolve_kwargs_merged...)
+    _residuals!(similar(r_sol.zero), r_sol.zero; path, e_init, e_final, k_path, b_path)
     
-#     return path 
-# end
+    return path 
+end
 
 
 
@@ -81,29 +80,35 @@ function solve_transition(
         r_sol = r_path[1:length(k_path) - 1]
     end 
 
-    r_sol[1] = e_init.r
+    r_sol[1] = e_final.r
 
-    jac_R = jacobian(e_init; cap_t = length(r_sol) + 1, ΔR = 1e-4, ΔT = 0.0)[2:end, 2:end]
-    jac_T = jacobian(e_init; cap_t = length(r_sol) + 1, ΔT = 1e-4, ΔR = 0.0)[2:end, 2:end]
+    jac_R = jacobian(e_final; cap_t = length(r_sol) + 1, ΔR = 1e-4, ΔT = 0.0)
+    jac_T = jacobian(e_final; cap_t = length(r_sol) + 1, ΔT = 1e-4, ΔR = 0.0)
     jac = similar(jac_T)
-    for s in axes(jac, 1)
-        for t in axes(jac, 2)
-            jac[s, t] = jac_R[s, t] - jac_T[s, t] * (b_path[t] + k_path[t]) 
+    for t in axes(jac, 2)
+        for s in axes(jac, 1)
+            jac[t, s] = jac_R[t, s] - jac_T[t, s] * (b_path[end] + k_path[end])
         end
     end 
+    jac = jac[2:end, 2:end]
+
+    cond(jac) > 1e+8 && @warn("Jacobian seems ill-conditioned. If it doesn't converge, try solve_transition_slow_but_robust.") 
+    Afact = factorize(jac)
 
     residuals = fill(zero(e_final.a), length(r_sol))
-    iter = 1
+    iter = 0
 
     f! = (F, x) -> _residuals!(F, x; path, e_init, e_final, k_path, b_path)
+
     while true 
         f!(residuals, r_sol)
-        r_sol .= r_sol .- inv(jac) * residuals
+        r_sol .= r_sol .-  Afact \ residuals
+        # @infiltrate true
         dis = maximum((abs(x) for x in residuals))
-        verbose && (iter % print_every == 1) && println("Iter: $iter, error: $dis")
-        dis < tol && break
-        iter > max_iters && (warn("Did not converge"); break)
-        iter += 1 
+        verbose && (iter % print_every == 0) && println("Iter: $(iter + 1), error: $dis")
+        dis < tol && (println("Iter: $(iter + 1), error: $dis"); break)
+        iter += 1
+        iter >= max_iters && (@warn("Did not converge after $max_iters iterations"); break)
     end  
 
     return path 

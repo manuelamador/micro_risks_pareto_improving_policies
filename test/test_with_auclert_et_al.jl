@@ -69,7 +69,7 @@ end
 mat = readdlm(joinpath(@__DIR__, "jacobian_SSJ_toolkit.csv"), ',');
 
 # Computing ours
-@time jac = jacobian_column([10, 200, 500], e_init, cap_t = 1001, cap_s = 500, ΔR = 1e-4, ΔT = 0.0);
+@time jac = jacobian_row([10, 200, 500], e_init, cap_t = 1001, cap_s = 500, ΔR = 1e-4, ΔT = 0.0);
 
 
 # Comparing in a figure
@@ -85,8 +85,10 @@ let
     fig
 end 
 
-extrema(mat[1:end, 10] .- jac[1][2:end])
-extrema(mat[1:end, 200] .- jac[2][2:end])
-extrema(mat[1:end, 500] .- jac[3][2:end])
+[
+    extrema(mat[1:end, 10] .- jac[1][2:end]),
+    extrema(mat[1:end, 200] .- jac[2][2:end]),
+    extrema(mat[1:end, 500] .- jac[3][2:end])
+]
 
 

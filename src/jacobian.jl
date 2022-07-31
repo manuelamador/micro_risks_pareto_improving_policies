@@ -45,15 +45,15 @@ end
 reset!(cache::JacobianCache, e::StationaryEquilibrium; ΔR, ΔT) = reset!(cache, e.ws; R = 1 + e.r, e.T, e.w, ΔR, ΔT)
 
 
-function jacobian_column(s, ws::HouseholdWorkspace; R, T, w, cap_s, cap_t, ΔR, ΔT)
+function jacobian_row(s, ws::HouseholdWorkspace; R, T, w, cap_s, cap_t, ΔR, ΔT)
     cache = JacobianCache(ws; cap_s, cap_t, R, T, w, ΔR, ΔT)
-    f = x -> jacobian_column!(cache, x)
+    f = x -> jacobian_row!(cache, x)
     return f.(s)
 end 
-jacobian_column(s, e::StationaryEquilibrium; cap_s, cap_t, ΔR, ΔT) = jacobian_column(s, e.ws; R = 1 + e.r, e.T, e.w, cap_s, cap_t, ΔR, ΔT)
+jacobian_row(s, e::StationaryEquilibrium; cap_s, cap_t, ΔR, ΔT) = jacobian_row(s, e.ws; R = 1 + e.r, e.T, e.w, cap_s, cap_t, ΔR, ΔT)
  
 
-function jacobian_column!(cache::JacobianCache, s)
+function jacobian_row!(cache::JacobianCache, s)
     (; ws, cap_s, cap_t, ΔR, ΔT) = cache 
     h = ws.h
     (s > cap_s || s < 1) && @error " s out of valid range .. exiting."
@@ -91,7 +91,7 @@ function jacobian(ws::HouseholdWorkspace; R, T, w, ΔR, ΔT, cap_t)
                 adiff += a * signΔ 
                 (t < cap_t) && forward_pdf!(path[t+1].pdf; h, path[t].pdf, lower_index, lower_weight)
             end
-            jac[s, t] = adiff / (2 * (ΔR + ΔT))
+            jac[t, s] = adiff / (2 * (ΔR + ΔT))
         end 
     end 
     return jac 
