@@ -53,7 +53,7 @@ function solve_transition_slow_but_robust(
     path = _initialize_path(e_init, e_final; k_path)
 
     if isnothing(r_path) 
-        r_path_rest = [(e_final.r) for _ in 1:length(k_path) - 1]
+        r_path_rest = fill(e_final.r, length(k_path) - 1)
     else 
         r_path_rest = r_path[2:end]
     end 
@@ -69,18 +69,16 @@ end
 
 
 function solve_transition(
-    e_init, e_final; k_path, b_path, r_path = nothing, verbose = true,
-    print_every = 10, max_iters = _ZERO_MAX_ITERS, tol = _ZERO_FTOL
+    e_init, e_final; k_path, b_path, r_path = nothing, verbose = true, 
+    max_iters = _ZERO_MAX_ITERS, tol = _ZERO_FTOL
 )    
     path = _initialize_path(e_init, e_final; k_path)
 
     if isnothing(r_path) 
-        r_sol = [(e_final.r) for _ in 1:length(k_path) - 1]
+        r_sol = fill(e_final.r, length(k_path) - 1)
     else 
         r_sol = r_path[1:length(k_path) - 1]
     end 
-
-    r_sol[1] = e_final.r
 
     jac_R = jacobian(e_final; cap_t = length(r_sol) + 1, ΔR = 1e-4, ΔT = 0.0)
     jac_T = jacobian(e_final; cap_t = length(r_sol) + 1, ΔT = 1e-4, ΔR = 0.0)
@@ -96,17 +94,17 @@ function solve_transition(
     Afact = factorize(jac)
 
     residuals = fill(zero(e_final.a), length(r_sol))
-    iter = 0
-
     f! = (F, x) -> _residuals!(F, x; path, e_init, e_final, k_path, b_path)
 
+    iter = 0
+    p = ProgressUnknown()
     while true 
         f!(residuals, r_sol)
         r_sol .= r_sol .-  Afact \ residuals
         # @infiltrate true
         dis = maximum((abs(x) for x in residuals))
-        verbose && (iter % print_every == 0) && println("Iter: $(iter + 1), error: $dis")
-        dis < tol && (println("Iter: $(iter + 1), error: $dis"); break)
+        verbose && next!(p,  showvalues = [(:error, dis)])
+        dis < tol && (finish!(p, showvalues = [(:error, dis)]); break)
         iter += 1
         iter >= max_iters && (@warn("Did not converge after $max_iters iterations"); break)
     end  

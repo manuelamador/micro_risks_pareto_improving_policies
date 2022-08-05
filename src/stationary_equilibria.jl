@@ -21,9 +21,11 @@ function stationary_laissez_faire(h, t; r_range,
 
     ws = HouseholdWorkspace(; h, pars...)
 
-    f = (r) -> _laissez_faire!(ws, r, h, t, verbose, stationary_kwargs).excess 
+    p = ProgressUnknown()
+    f = (r) -> _laissez_faire!(ws, r, h, t, verbose, p, stationary_kwargs).excess 
     r = find_zero(f, r_range, solver; find_zero_kwargs...)
-    (; w, n, k, a) = _laissez_faire!(ws, r, h, t, false, stationary_kwargs)
+    (; w, n, k, a) = _laissez_faire!(ws, r, h, t, false, p, stationary_kwargs)
+    verbose && finish!(p, showvalues = [(:r, r), (:error, a - k)])
 
     e = StationaryEquilibrium(;
         h, t, ws, w, n, k, a, r, 
@@ -33,7 +35,7 @@ function stationary_laissez_faire(h, t; r_range,
 end
 
 
-function _laissez_faire!(ws, r, h, t, verbose, stationary_kwargs)
+function _laissez_faire!(ws, r, h, t, verbose, p, stationary_kwargs)
     w = w_from_r(t; r)
     pars = (R = 1 + r, T = zero(r), w)
     stationary!(ws; stationary_kwargs..., pars...)
@@ -41,7 +43,7 @@ function _laissez_faire!(ws, r, h, t, verbose, stationary_kwargs)
     n = labor_supply(h; w = w)
     k = k_from_r_n(t; r, n)
     excess = a - k
-    verbose && println("error: $excess r:$r w:$w n:$n k:$k a:$a")
+    verbose && next!(p, showvalues = [(:r, r), (:error, excess)])
     return (; excess, w, a, n, k)
 end
 
@@ -52,7 +54,6 @@ function stationary_equilibrium_given_k_b(e_init, k, b; r_range,
     solver = A42(), 
     find_zero_kwargs = (; atol = _ZERO_FTOL)
 )
-
     hh_problem_options_baseline = (; 
         verbose = false
     ) 
@@ -71,26 +72,27 @@ function stationary_equilibrium_given_k_b(e_init, k, b; r_range,
     ws = HouseholdWorkspace(; h, pars...)
     min_T = minimum_feasible_transfer(h, w0)
 
-    f = (r) -> _k_b_excess!(ws, r, e_init, k, b, min_T, verbose, stationary_kwargs).excess
+    p = ProgressUnknown()
+    f = (r) -> _k_b_excess!(ws, r, e_init, k, b, min_T, verbose, p, stationary_kwargs).excess
     r = find_zero(f, r_range, solver; find_zero_kwargs...)
-    (; a, T) = _k_b_excess!(ws, r, e_init, k, b, min_T, false, stationary_kwargs)
+    (; a, T) = _k_b_excess!(ws, r, e_init, k, b, min_T, false, p, stationary_kwargs)
+    verbose && finish!(p, showvalues = [(:r, r), (:error, a - k - b)])
 
     e = StationaryEquilibrium(; h, t, ws, w = w0, n = n0, k, a, r, b, T)
     return e
 end
 
 
-function _k_b_excess!(ws, r, e_init, k, b, min_T, verbose, stationary_kwargs)
+function _k_b_excess!(ws, r, e_init, k, b, min_T, verbose, p, stationary_kwargs)
     (; h, t) = e_init
     k0, n0, r0, w0 = e_init.k, e_init.n, e_init.r, e_init.w
     T = get_T(t; b, bprime = b, k, r, r0, k0, n0)
     (T <= min_T) && (return (; excess = 1e10))
-    pars = (R = 1 + r, T = T, w = w0)
     
-    stationary!(ws; pars..., stationary_kwargs...)
+    stationary!(ws; R = 1 + r, T = T, w = w0, stationary_kwargs...)
     a = asset_supply(h.a_grid, ws.pdf)
     excess = a - k - b
-    verbose && println("error: $excess r:$r T:$T a:$a k:$k b:$b")
+    verbose && next!(p, showvalues = [(:r, r), (:error, excess)])
     return (; excess, a, T)
 end
 

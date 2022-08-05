@@ -17,9 +17,8 @@ function backwards_euler_x(u::CRRA, π_vec, η_vec)
     ξ = get_inverse_ies(u)
     β = get_β(u)
     Evx = zero(eltype(η_vec))
-    @inbounds for i in eachindex(π_vec)
-        η = η_vec[i]
-        Evx += π_vec[i] * (η)^(-ξ)
+    for (π, η) in zip(π_vec, η_vec)
+        Evx += π * (η)^(-ξ)
     end 
     x = (β * Evx)^(-1 / ξ)
     return x
@@ -31,11 +30,9 @@ function backwards_euler_x(u::EZ, π_vec, v_vec, η_vec)
     γ = get_ra(u)
     β = get_β(u)
     Ev = Evx = zero(eltype(v_vec))
-    @inbounds for i in eachindex(π_vec)
-        v = v_vec[i]
-        η = η_vec[i]
-        Evx += π_vec[i] * (v)^((ξ - γ)) * (η)^(-ξ)
-        Ev += π_vec[i] * u.risk(v)
+    for (v, η, π) in zip(v_vec, η_vec, π_vec)
+        Evx += π * (v)^((ξ - γ)) * (η)^(-ξ)
+        Ev += π * u.risk(v)
     end 
     x = (β * inverse(u.risk, Ev^((γ - ξ))) * Evx)^(-1 / ξ)
     return x
