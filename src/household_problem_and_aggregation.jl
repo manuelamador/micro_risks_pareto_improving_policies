@@ -51,13 +51,13 @@ function backwards_once!(h, current_values; next_values, R, T, w, a_tmp = simila
         z = h.z_grid[s]
         add =  labor_income(h.v; w = w * z)  + T - disutility_given_w(h.v; w = w * z)
 
-        @inbounds for i in eachindex(h.a_grid)
+        for i in eachindex(h.a_grid)
             x = _backwards_euler_x_helper(h.u, P′, i, s, next_values)
             a_next = h.a_grid[i]
             a_tmp[i, s]  = (x + a_next - add) / R
         end
 
-        @inbounds for i in eachindex(h.a_grid)
+        for i in eachindex(h.a_grid)
             a = h.a_grid[i]
             a_prime = interp1D(a, view(a_tmp, :, s), h.a_grid)
             a_prime = clamp(a_prime, a_min, a_max)
@@ -74,11 +74,11 @@ function _extra_updates!(u::EZ, current_values, next_values, h, a_prime, P′, x
     β = u.β
 
     Ev = zero(a_prime)
-    @inbounds for s2 in axes(next_values.v, 2)
+    for s2 in axes(next_values.v, 2)
         v_prime = interp1D(a_prime, h.a_grid, view(next_values.v, :, s2))
         Ev += P′[s2, s] * u.risk(v_prime)
     end
-    @inbounds current_values.v[i, s] =
+    current_values.v[i, s] =
         inverse(u.temporal, (1 - β) * u.temporal(x) + β * u.temporal(inverse(u.risk, Ev)))
 end 
 
@@ -95,7 +95,7 @@ function interpolate_asset_policy!(lower_index, lower_weight; a_grid, a_pol)
         a = a_pol[i]
         j = searchsortedfirst(a_grid, a)
         ind = clamp(j, firstindex(a_grid) + 1, lastindex(a_grid))
-        @inbounds l_weight =  (a_grid[ind] - a) / (a_grid[ind] - a_grid[ind - 1]) 
+        l_weight =  (a_grid[ind] - a) / (a_grid[ind] - a_grid[ind - 1]) 
         lower_index[i] = ind - 1
         lower_weight[i] = clamp(l_weight, zero(l_weight), one(l_weight))
     end 
@@ -107,7 +107,7 @@ function forward_pdf!(pdf_next; h, pdf, lower_index, lower_weight)
     P′ = h.Pprime
     fill!(pdf_next, zero(eltype(pdf_next)))
     for s in axes(pdf, 2)
-        @inbounds for i in axes(pdf, 1)
+        for i in axes(pdf, 1)
             ind = lower_index[i, s]
             weight = lower_weight[i, s]
             for s′ in axes(pdf, 2)

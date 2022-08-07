@@ -154,7 +154,7 @@ function _initialize_HH_ws!(ws::HouseholdWorkspace, R, T, w)
     u = h.u
     ξ = get_inverse_ies(u) 
     a_min = first(h.a_grid)
-    @inbounds for i in axes(ws.v, 1)
+    for i in axes(ws.v, 1)
         for s in axes(ws.v, 2)
             z = h.z_grid[s]
             dis = disutility_given_w(h.v; w = w * z)

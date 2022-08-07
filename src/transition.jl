@@ -115,7 +115,7 @@ function _residuals!(residuals, r_path_rest; path, e_init, e_final, k_path, b_pa
     r_max = 1 / h.u.β  # a maximum -- could be relaxed
     min_T = minimum_feasible_transfer(h, w) + eps() # minimum transfer
     
-    @inbounds for i in reverse(eachindex(path, b_path, k_path))
+    for i in reverse(eachindex(path, b_path, k_path))
         b, k = b_path[i], k_path[i]
         bprime = i == lastindex(b_path) ? e_final.b : b_path[i + 1] 
         r = (i == firstindex(path)) ? r0 : r_path_rest[i - 1]
@@ -133,7 +133,7 @@ function _residuals!(residuals, r_path_rest; path, e_init, e_final, k_path, b_pa
         interpolate_asset_policy!(path[i].lower_index, path[i].lower_weight; h.a_grid, path[i].a_pol)
     end
 
-    @inbounds for i in eachindex(path) 
+    for i in eachindex(path) 
         a = asset_supply(h.a_grid, path[i].pdf)
         path.a[i] = a
         path.b[i] = b_path[i]

@@ -16,7 +16,7 @@ end
 function interp1D(x::Real, xvec, yvec)
     i = searchsortedfirst(xvec, x)
     ind = clamp(i, firstindex(xvec) + 1, lastindex(xvec))
-    @inbounds val = yvec[ind - 1] + (yvec[ind] - yvec[ind - 1]) / (xvec[ind] - xvec[ind - 1]) * (x - xvec[ind - 1])
+    val = yvec[ind - 1] + (yvec[ind] - yvec[ind - 1]) / (xvec[ind] - xvec[ind - 1]) * (x - xvec[ind - 1])
     return val
 end 
 
