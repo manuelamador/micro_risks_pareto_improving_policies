@@ -1,20 +1,8 @@
 
 
-function _jacobian_item(h::Household)  
-    v = Array{eltype(h.a_grid)}(undef, length(h.a_grid), length(h.z_grid))
-    η = similar(v) 
-    a_pol = similar(v)
-    pdf = similar(v)
-    lower_index = similar(v, Int)
-    lower_weight = similar(v)
-    a_tmp = similar(v)
-    return (; v, η, a_pol, pdf, lower_index, lower_weight, a_tmp)
-end 
-
-
 function JacobianCache(ws::HouseholdWorkspace; cap_s, cap_t, R, T, w, ΔR, ΔT)
-    path_up = StructArray(_jacobian_item(ws.h) for _ in 1:cap_t)
-    path_down = StructArray(_jacobian_item(ws.h) for _ in 1:cap_t)
+    path_up = StructArray(_generate_base_workspace_matrices(ws.h) for _ in 1:cap_t)
+    path_down = StructArray(_generate_base_workspace_matrices(ws.h) for _ in 1:cap_t)
     cache = JacobianCache(path_up, path_down, cap_s, cap_t, ws, R, T, ΔR, ΔT)
     reset!(cache, ws; R, T, w, ΔR, ΔT)
     return cache

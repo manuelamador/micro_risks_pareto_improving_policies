@@ -9,20 +9,20 @@ abstract type AbstractSubUtility end
 struct Log <: AbstractSubUtility
 end 
 Base.show(io::IO, ::Log) = print(io, "Log")
-get_power(::Log) = 1 
+get_parameter(::Log) = 1 
 
 struct Power{T} <: AbstractSubUtility   
     a::T
 end 
 Base.show(io::IO, m::Power) = print(io, "$m.a")
-get_power(m::Power) = m.a
+get_parameter(m::Power) = m.a
 
 
 (::Log)(x)  = log(x) 
 inverse(::Log, x) = exp(x) 
 
-(m::Power)(x)  = x^(1 - m.a) 
-inverse(m::Power, x) = x^(1 /(1 - m.a)) 
+(m::Power)(x)  = x^(1 - m.a)
+inverse(m::Power, x) = x^(1 / (1 - m.a)) 
 
 
 # Epstein-Zin type
@@ -31,9 +31,9 @@ struct EZ{T1<:AbstractSubUtility, T2<:AbstractSubUtility, T3} <: AbstractUtility
     temporal::T2 # IES
     β::T3
 end
-get_ra(m::EZ) = get_power(m.risk)
-get_inverse_ies(m::EZ) = get_power(m.temporal)  
-get_ies(m::EZ) = 1/get_power(m.temporal)
+get_ra(m::EZ) = get_parameter(m.risk)
+get_inverse_ies(m::EZ) = get_parameter(m.temporal)  
+get_ies(m::EZ) = 1/get_parameter(m.temporal)
 get_β(m::EZ) = m.β
 
 Base.show(io::IO, m::EZ) = print(io, "EZ(ra=$(get_ra(m)), ies=$(get_ies(m)), β=$(m.β))")
@@ -87,6 +87,7 @@ Base.@kwdef struct Household{U<:AbstractUtility, V, M1, M2, M3, M4}
     v::V = GHH()
     z_grid::M1 = [0.5, 1.0]
     P::M2 = [0.5 0.5; 0.2 0.8]
+    Pprime::M2 = copy(P')
     a_grid::M3 = grid(; start = 0.0, stop = 15.0, length = 500, scale = :log)  
     Pss::M4 = ergodic(P)
 end
@@ -124,21 +125,28 @@ end
 
 
 function HouseholdWorkspace(h::Household)  
-    v = Array{eltype(h.a_grid)}(undef, length(h.a_grid), length(h.z_grid))
-    η = similar(v) 
-    a_pol = similar(v)
-    pdf = similar(v)
-    lower_index = similar(v, Int)
-    lower_weight = similar(v)
+    (; v, η, a_pol, pdf, lower_index, lower_weight, a_tmp) = _generate_base_workspace_matrices(h)
 
     v_tmp = similar(v)
     η_tmp = similar(v)
-    a_tmp = similar(v)
     pdf_tmp = similar(v)
-
+     
     return HouseholdWorkspace(h, v, η, a_pol, pdf, lower_index, lower_weight, v_tmp, η_tmp, a_tmp, pdf_tmp)
 end 
 HouseholdWorkspace(;h, R, T, w) = _initialize_HH_ws!(HouseholdWorkspace(h), R, T, w)
+
+
+function _generate_base_workspace_matrices(h::Household)
+    η = Array{eltype(h.a_grid)}(undef, length(h.a_grid), length(h.z_grid))
+    v = similar(η) 
+    a_pol = similar(η)
+    pdf = similar(η)
+    lower_index = similar(η, Int)
+    lower_weight = similar(η)
+    a_tmp = similar(η)  
+
+    return (; η, v, a_pol, pdf, lower_index, lower_weight, a_tmp)
+end 
 
 
 function _initialize_HH_ws!(ws::HouseholdWorkspace, R, T, w)

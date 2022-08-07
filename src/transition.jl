@@ -1,12 +1,7 @@
 
 function _transition_item(h::Household)  
-    v = Array{eltype(h.a_grid)}(undef, length(h.a_grid), length(h.z_grid))
-    η = similar(v) 
-    a_pol = similar(v)
-    pdf = similar(v)
-    lower_index = similar(v, Int)
-    lower_weight = similar(v)
-    a_tmp = similar(v)
+    (; v, η, a_pol, pdf, lower_index, lower_weight, a_tmp) = _generate_base_workspace_matrices(h)
+
     r = T = a = k = b = zero(eltype(h.a_grid)) 
     return (; h, v, η, a_pol, pdf, lower_index, lower_weight, a_tmp, r, T, a, k, b)
 end 
@@ -90,7 +85,7 @@ function solve_transition(
     end 
     jac = jac[2:end, 2:end]
 
-    cond(jac) > 1e+8 && @warn("Jacobian seems ill-conditioned. If it doesn't converge, try solve_transition_slow_but_robust.") 
+    cond(jac) > 1e+8 && @warn("Jacobian seems ill-conditioned. If this doesn't converge, try solve_transition_slow_but_robust.") 
     Afact = factorize(jac)
 
     residuals = fill(zero(e_final.a), length(r_sol))
@@ -113,12 +108,8 @@ end
 
 
 function _residuals!(residuals, r_path_rest; path, e_init, e_final, k_path, b_path)
-    h = e_init.h
-    t = e_init.t
-    w = e_init.w
-    n0 = e_init.n
-    r0 = e_init.r 
-    k0 = e_init.k
+    (; h, t, w) = e_init
+    n0, r0, k0 = e_init.n, e_init.r, e_init.k
 
     r_min = - t.δ + eps()  # minimum interest rate
     r_max = 1 / h.u.β  # a maximum -- could be relaxed
@@ -131,8 +122,8 @@ function _residuals!(residuals, r_path_rest; path, e_init, e_final, k_path, b_pa
         r = clamp(r, r_min, r_max)
         R = 1 + r
 
-        T_ = get_T(t; b, bprime, r = r, k, k0, r0, n0)
-        T = max(T_, min_T) 
+        T = get_T(t; b, bprime, r = r, k, k0, r0, n0)
+        T = max(T, min_T) 
         
         path.T[i] = T
         path.r[i] = r
