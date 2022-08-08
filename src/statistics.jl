@@ -1,62 +1,24 @@
 
 # Displays a statistical summary of the economy.
 
-function summary_statics(
-    e;
-    iobuffer = stdout,
-    laissez_faire = nothing, path = nothing
-)
-    h = e.h
-    a_grid = h.a_grid
+function generate_tables(laissez_faire, constant_k_final, constant_k_path, golden_k_final, golden_k_path; io = stdout)
 
-    pdf = sum(e.ws.pdf, dims=2)[:, 1]
+    table1 = zeros(5, 2)
+    
+    pdf_marginal = sum(laissez_faire.ws.pdf, dims=2)[:, 1]
+    a_grid = laissez_faire.h.a_grid
+    qu_10 = [quantile(a_grid, StatsBase.ProbabilityWeights(pdf_marginal), x) for x in 0.0:0.1:1.0]
 
-    println(iobuffer, "\nFISCAL")
-    println(iobuffer, "debt: ", e.b)
-    println(iobuffer, "debt over y (%): ", e.b / y(e) * 100)
-    println(iobuffer, "transfer over y (%): ", 100 * e.T / y(e))
-    println(iobuffer, "interest rate: ", e.r)
+    weight = similar(laissez_faire.ws.pdf)
 
-    println(iobuffer, "\nAGGREGATES")
-    println(iobuffer, "capital over y: ", e.k / y(e))
-
-    println(iobuffer, "\nHOUSEHOLDS")
-
-    con = consumption_alloc(h; R = 1 + e.r, e.w, e.T, e.ws.a_pol)
-    con = reshape(con, 1, :)[1, :]
-    allpdf = reshape(e.ws.pdf, 1, :)[1, :]
-    std_con = 100 * StatsBase.std(log.(con), StatsBase.ProbabilityWeights(allpdf))
-    println(iobuffer, "standard deviation of log c (*100): ", std_con, "\n")
-    println(iobuffer, "mass of constrained households (%): ", 100 * sum(e.ws.pdf[1, :]))
-
-    s = asset_supply(a_grid, e.ws.pdf)
-    println(iobuffer, "mean wealth (over y): " , s / y(e))
-    println(iobuffer, "median wealth (over y): ",
-        quantile(a_grid , StatsBase.ProbabilityWeights(pdf), 0.5) / y(e))
-
-    qu = [quantile(a_grid, StatsBase.ProbabilityWeights(pdf), x) for x in 0.0:0.20:1.0]
-
-    total = sum(a_grid .* pdf)
-    dist = [sum((a_grid .<= qi) .* (a_grid .* pdf)) * 100 / total for qi in qu] |> diff
-    println(iobuffer, "share of wealth per asset quintiles:\n   $dist")
-
-    if path !== nothing && laissez_faire !== nothing
-        println(iobuffer, "\nTRANSITION")
-
+    for (i, path) in enumerate([constant_k_path, golden_k_path]) 
         w_gains = 100 .* (path.v[1] ./ laissez_faire.ws.v .- 1)
 
-        m1 = minimum(w_gains[laissez_faire.ws.pdf .> 0])
-        m2 = maximum(w_gains[laissez_faire.ws.pdf .> 0])
-        m3 = sum(w_gains .* laissez_faire.ws.pdf)
-        println(iobuffer, "welfare gain in transition: min = $m1,  max = $m2,  mean = $m3")
-
-        wgains_summary = Float64[]
-
+        _min = minimum(w_gains[laissez_faire.ws.pdf .> 0])
+        _mean = sum(w_gains .* laissez_faire.ws.pdf)
+     
         w_gains_rs = reshape(w_gains, 1, :)[1, :]
-
-        weight = similar(laissez_faire.ws.pdf)
-
-        qu_10 = [quantile(a_grid, StatsBase.ProbabilityWeights(pdf), x) for x in 0.0:0.1:1.0]
+        wgains_summary = Float64[]
 
         for (qi, qii) in zip(qu_10, qu_10[2:end])
             if qii == qu_10[end]
@@ -70,8 +32,41 @@ function summary_statics(
             weight_rs = reshape(weight, 1, :)[1, :]
             push!(wgains_summary, mean(w_gains_rs, ProbabilityWeights(weight_rs)))
         end
+    
+        _poor = first(wgains_summary)
+        _rich = last(wgains_summary)
+        _middle = sum(wgains_summary[5:6])/2 
 
-        println(iobuffer, "mean welfare gain per asset decile:\n $wgains_summary")
-    end
-end
+       table1[:, i] .= [_mean, _min, _poor, _middle, _rich]
+    end 
 
+    table2 = zeros(10, 3)
+    for (i, e) in enumerate([laissez_faire, constant_k_final, golden_k_final])    
+        final_pdf_marginal = sum(e.ws.pdf, dims=2)[:, 1]
+        qu = [quantile(a_grid, StatsBase.ProbabilityWeights(final_pdf_marginal), x) for x in 0.0:0.20:1.0]
+    
+        total = sum(a_grid .* final_pdf_marginal)
+        dist = [sum((a_grid .<= qi) .* (a_grid .* final_pdf_marginal)) * 100 / total for qi in qu] |> diff
+        
+        table2[:, i] .= [
+            [e.b / y(e) * 100,
+            e.r * 100,
+            e.k / y(e),
+            e.T / y(e) * 100, 
+            100 * sum(e.ws.pdf[1, :])];   # constrained households
+            dist ]            
+        
+    end 
+
+    out = [ 
+        pretty_table(io, table2, header = ["Laissez Faire", "Constant K", "Golden K"], 
+            formatters = (v, i, j) -> i ∉ [2, 3, 4] ? round(Int, v) : round(v, digits = 1), 
+            row_names = ["b/y (%)", "r (%)", "k/y", "T/y (%)", "Shared constrained hh", "Q1 Wealth Share", "Q2 Wealth Share", "Q3 Wealth Share" , "Q4 Wealth Share", "Q5 Wealth Share"], title = "Steady State Statistics"
+        ),
+    
+        pretty_table(io, table1, header = ["Constant K", "Capital Expansion"], formatters = ft_round(1), row_names = ["mean", "min", "poor (≤10)", "middle (40-60)", "rich (>90)"], title = "Welfare Gains at announcement")
+    ]
+
+    (io == String) && return out 
+    return nothing
+end 

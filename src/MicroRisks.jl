@@ -8,6 +8,7 @@ using StructArrays
 using StatsBase
 using Tullio
 using Polyester
+using PrettyTables
 
 include("types.jl")
 include("preferences.jl")
@@ -47,7 +48,7 @@ export
     solve_transition,
 
 # statistics_and_plots.jl
-    summary_statics, 
+    generate_tables, 
 
 # jacobian.jl 
     pv_elasticities, pv_elasticities!, jacobian_row, jacobian,

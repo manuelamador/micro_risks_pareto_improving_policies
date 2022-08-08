@@ -1,72 +1,25 @@
-INITIAL STEADY STATE
-=====================
-
-FISCAL
-debt: 0.0
-debt over y (%): 0.0
-transfer over y (%): 0.0
-interest rate: -0.01699696069678158
-
-AGGREGATES
-capital over y: 2.581661058252423
-
-HOUSEHOLDS
-standard deviation of log c (*100): 68.03300565719124
-
-mass of constrained households (%): 3.1822868795829655
-mean wealth (over y): 2.581661084696909
-median wealth (over y): 1.239457505838185
-share of wealth per asset quintiles:
-   [0.6626257844819046, 3.835585084652866, 9.846035266262597, 23.057130735021705, 62.59862312958093]
-
-FINAL STEADY STATE -- CONSTANT K AND DEBT
-=====================
-
-FISCAL
-debt: 0.13017584231851856
-debt over y (%): 60.0
-transfer over y (%): 0.05514050536385544
-interest rate: -0.013964968543057602
-
-AGGREGATES
-capital over y: 2.581661058252423
-
-HOUSEHOLDS
-standard deviation of log c (*100): 66.12239588719156
-
-mass of constrained households (%): 2.343852238563776
-mean wealth (over y): 3.1816610573300004
-median wealth (over y): 1.6542684708525808
-share of wealth per asset quintiles:
-   [0.7975190545527314, 4.2108089329076845, 10.66428233439781, 23.09395993387037, 61.233429744271405]
-
-TRANSITION
-welfare gain in transition: min = 2.0900544406300403,  max = 4.899246369273769,  mean = 2.631402918937762
-mean welfare gain per asset decile:
- [3.5791130257050963, 2.863028540108097, 2.4885678666313567, 2.3745881973019567, 2.3263094450567343, 2.2772377145057767, 2.2726399378120523, 2.317308042997176, 2.457305356387527, 2.8259765152806726]
-
-FINAL STEADY STATE -- GOLDEN K AND DEBT
-=====================
-
-FISCAL
-debt: 0.13017584231851856
-debt over y (%): 56.25989942739642
-transfer over y (%): 0.34333376031749363
-interest rate: -0.011275508661975252
-
-AGGREGATES
-capital over y: 3.0
-
-HOUSEHOLDS
-standard deviation of log c (*100): 63.90608841573992
-
-mass of constrained households (%): 1.918167703973909
-mean wealth (over y): 3.5625989931542725
-median wealth (over y): 1.9634216002780172
-share of wealth per asset quintiles:
-   [0.9023758168859614, 4.648067597097548, 11.065582345631508, 23.68464629336525, 59.69932794701973]
-
-TRANSITION
-welfare gain in transition: min = 4.475586819065791,  max = 9.37384811981541,  mean = 5.161125555164105
-mean welfare gain per asset decile:
- [5.175023198298488, 4.728496281752417, 4.641413258261661, 4.713899085106868, 4.844591967708746, 5.0401839068259555, 5.302528983578218, 5.607309347275227, 6.156059220852451, 7.117393067883714]
+Steady State Statistics
+┌───────────────────────┬───────────────┬────────────┬──────────┐
+│                       │ Laissez Faire │ Constant K │ Golden K │
+├───────────────────────┼───────────────┼────────────┼──────────┤
+│               b/y (%) │             0 │         60 │       56 │
+│                 r (%) │          -1.7 │       -1.4 │     -1.1 │
+│                   k/y │           2.6 │        2.6 │      3.0 │
+│               T/y (%) │           0.0 │        0.1 │      0.3 │
+│ Shared constrained hh │             3 │          2 │        2 │
+│       Q1 Wealth Share │             1 │          1 │        1 │
+│       Q2 Wealth Share │             4 │          4 │        5 │
+│       Q3 Wealth Share │            10 │         11 │       11 │
+│       Q4 Wealth Share │            23 │         23 │       24 │
+│       Q5 Wealth Share │            63 │         61 │       60 │
+└───────────────────────┴───────────────┴────────────┴──────────┘
+Welfare Gains at announcement
+┌────────────────┬────────────┬───────────────────┐
+│                │ Constant K │ Capital Expansion │
+├────────────────┼────────────┼───────────────────┤
+│           mean │        2.6 │               5.2 │
+│            min │        2.1 │               4.5 │
+│     poor (≤10) │        3.7 │               5.3 │
+│ middle (40-60) │        2.3 │               4.8 │
+│     rich (>90) │        2.8 │               6.7 │
+└────────────────┴────────────┴───────────────────┘

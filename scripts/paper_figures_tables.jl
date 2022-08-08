@@ -9,7 +9,6 @@ using CairoMakie
 using LaTeXStrings
 using StatsBase
 using Polyester
-using Roots
 
 _φ = 1/Base.MathConstants.φ
 
@@ -126,30 +125,8 @@ b_path_3 = [0.0 for _ in k_path_2];
 
 # ## Statistics
 
-statistics = let
-    iobuffer = IOBuffer()
-
-    println(iobuffer, "INITIAL STEADY STATE")
-    println(iobuffer,"=====================")
-    summary_statics(e_init; iobuffer)
-
-
-    println(iobuffer, "\nFINAL STEADY STATE -- CONSTANT K AND DEBT")
-    println(iobuffer, "=====================")
-    summary_statics(e_final;
-        laissez_faire = e_init,
-        path = path, iobuffer)
-
-
-    println(iobuffer, "\nFINAL STEADY STATE -- GOLDEN K AND DEBT")
-    println(iobuffer, "=====================")
-    summary_statics(e_final_2;
-        laissez_faire = e_init,
-        path = path_2, iobuffer)
-
-    String(take!(iobuffer))
-end
-println("\n", statistics, "\n")
+tab_1_2 = generate_tables(e_init, e_final, path, e_final_2, path_2, io=String);
+println(tab_1_2...);
 
 # ##  Plots
 
@@ -528,5 +505,7 @@ save(joinpath(@__DIR__, "..", "output", "figures", "pv_elasticities_regions_PE.p
 save(joinpath(@__DIR__, "..", "output", "figures", "pv_elasticities_regions_GE.pdf"), fig_pv_GE);
 
 open(joinpath(@__DIR__, "..", "output", "tables", "statistics.txt"), "w") do file
-    write(file, statistics)
-end
+    write(file, tab_1_2...)
+end;
+
+
