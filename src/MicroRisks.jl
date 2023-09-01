@@ -7,7 +7,6 @@ using NLsolve
 using StructArrays
 using StatsBase
 using Tullio
-using Polyester
 using PrettyTables
 
 include("types.jl")

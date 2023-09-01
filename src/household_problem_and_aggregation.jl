@@ -47,7 +47,7 @@ function backwards_once!(h, current_values; next_values, R, T, w, a_tmp = simila
     a_min = first(h.a_grid)
     a_max = last(h.a_grid)
 
-    @batch for s in eachindex(h.z_grid)
+    Threads.@threads for s in eachindex(h.z_grid)
         z = h.z_grid[s]
         add =  labor_income(h.v; w = w * z)  + T - disutility_given_w(h.v; w = w * z)
 
@@ -91,7 +91,7 @@ asset_policy_given_η!(ws::HouseholdWorkspace; R, T, w) = asset_policy_given_η!
 
 
 function interpolate_asset_policy!(lower_index, lower_weight; a_grid, a_pol)
-    @batch for i in eachindex(a_pol, lower_index, lower_weight)
+    Threads.@threads for i in eachindex(a_pol, lower_index, lower_weight)
         a = a_pol[i]
         j = searchsortedfirst(a_grid, a)
         ind = clamp(j, firstindex(a_grid) + 1, lastindex(a_grid))
@@ -161,7 +161,7 @@ end
 function consumption_alloc(h::Household; R, w, T, a_pol)
     (; z_grid,  a_grid) = h
     c = similar(a_pol)
-    @batch for s in axes(c, 2)
+    Threads.@threads for s in axes(c, 2)
         for i in axes(c, 1)
             c[i, s] = R * a_grid[i] + T + labor_income(h.v; w = w * z_grid[s]) - a_pol[i, s] 
         end

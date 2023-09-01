@@ -8,7 +8,7 @@ using ProgressMeter
 using CairoMakie
 using LaTeXStrings
 using StatsBase
-using Polyester
+using Roots
 
 _φ = 1/Base.MathConstants.φ
 
@@ -264,24 +264,22 @@ end
 r_range_ = [e_init_2.r, 0.0]
 b_range  =  2.6:-0.2:0.2
 out = Array{Any}(undef, length(b_range))
-Polyester.disable_polyester_threads() do
-    p = Progress(length(b_range))
-    @time Threads.@threads for i in eachindex(b_range)
-        b = b_range[i]
-        sol = stationary_equilibrium_given_k_b(
-            e_init_2,
-            e_init_2.k,
-            b * y(e_init_2);
-            r_range = r_range_,
-            verbose = false,
-            hh_problem_kwargs = (;
-                value_tol = 1e-7, 
-                policy_tol = 1e-7, 
-                pdf_tol = 1e-7)
-        )
-        out[i] = sol
-        next!(p)
-    end
+p = Progress(length(b_range))
+@time Threads.@threads for i in eachindex(b_range)
+    b = b_range[i]
+    sol = stationary_equilibrium_given_k_b(
+        e_init_2,
+        e_init_2.k,
+        b * y(e_init_2);
+        r_range = r_range_,
+        verbose = false,
+        hh_problem_kwargs = (;
+            value_tol = 1e-7, 
+            policy_tol = 1e-7, 
+            pdf_tol = 1e-7)
+    )
+    out[i] = sol
+    next!(p)
 end
 # out = @showprogress map(f, 2.6:-0.2:0.2)
 push!(out, e_init_2);
@@ -327,28 +325,26 @@ function pv_PE(;R, ies_range, μ_range,
     β = 0.993
     
     lst = similar(ies_range, Any)
-    
-    Polyester.disable_polyester_threads() do
-        p = Progress(length(ies_range))
-        Threads.@threads for i in eachindex(ies_range)
-            ies = ies_range[i]
-            u = EZ(ies = ies, ra = crra, β = β)
-            h = Household(u = u, a_grid = a_grid, v = v, P = P, z_grid = z_vals)
-            ws = stationary(h; R, T, w, verbose = false, value_tol, policy_tol, pdf_tol)
 
-            !is_pol_valid(ws.a_pol, h) && @warn "R =$R, ies = $ies. Not valid policy!"
+    p = Progress(length(ies_range))
+    Threads.@threads for i in eachindex(ies_range)
+        ies = ies_range[i]
+        u = EZ(ies = ies, ra = crra, β = β)
+        h = Household(u = u, a_grid = a_grid, v = v, P = P, z_grid = z_vals)
+        ws = stationary(h; R, T, w, verbose = false, value_tol, policy_tol, pdf_tol)
 
-            cache = JacobianCache(ws; R, T, w, cap_s, cap_t, ΔR = 1e-4, ΔT = 0.0) # compute cache only once
+        !is_pol_valid(ws.a_pol, h) && @warn "R =$R, ies = $ies. Not valid policy!"
 
-            pv_lst = map(μ_range) do μ 
-                Rk = μ * (r + δ) + 1 - δ
-                return (; 
-                    pv = Rk > 1 ? pv_elasticities!(cache, cap_s; Rk) : nothing, 
-                    r, μ, ies, crra, β, dyn_efficient = Rk > 1)
-            end
-            lst[i] = pv_lst
-            next!(p)
-        end 
+        cache = JacobianCache(ws; R, T, w, cap_s, cap_t, ΔR = 1e-4, ΔT = 0.0) # compute cache only once
+
+        pv_lst = map(μ_range) do μ 
+            Rk = μ * (r + δ) + 1 - δ
+            return (; 
+                pv = Rk > 1 ? pv_elasticities!(cache, cap_s; Rk) : nothing, 
+                r, μ, ies, crra, β, dyn_efficient = Rk > 1)
+        end
+        lst[i] = pv_lst
+        next!(p)
     end 
     
     return lst
@@ -432,7 +428,7 @@ function pv_GE(
         return dis
     end 
 
-    r = find_zero(f, r_range, A42(), atol = 1e-6)
+    r = find_zero(f, r_range, Roots.A42(), atol = 1e-6)
     stationary!(ws; R = 1 + r, T, w, verbose = false)
     !is_pol_valid(ws.a_pol, h) && @warn "Not valid policy!"
     
@@ -450,12 +446,10 @@ end
 ϵ_range = range(0.05, 1.5, length = 100)
 μ_range = range(1.001, 3.0, length = 75)
 lst_GE = similar(ϵ_range, Any)
-Polyester.disable_polyester_threads() do
-    p = Progress(length(ϵ_range))
-    @time Threads.@threads for i in eachindex(collect(reverse(ϵ_range)))
-        lst_GE[i] =  pv_GE(μ_range; ies = ϵ_range[i], r_range = (-0.07, 0.00))
-        next!(p)
-    end
+p = Progress(length(ϵ_range))
+@time Threads.@threads for i in eachindex(collect(reverse(ϵ_range)))
+    lst_GE[i] =  pv_GE(μ_range; ies = ϵ_range[i], r_range = (-0.07, 0.00))
+    next!(p)
 end
 
 fig_pv_GE = let lst = lst_GE
@@ -508,4 +502,29 @@ open(joinpath(@__DIR__, "..", "output", "tables", "statistics.txt"), "w") do fil
     write(file, tab_1_2...)
 end;
 
+# ## SOME ADDITIONAL FIGURES 
 
+let i = 1
+    # Plots the consumption policy functions in the laissez faire and after the policy change. 
+    c0 = consumption_alloc(e_init)
+    f, ax = lines(e_init.h.a_grid,  c0[:, 1], color = :black)
+    lines!(ax, e_init.h.a_grid,  c0[:, end], color = :black)
+    p = path[i]
+    c0new = consumption_alloc(p.h; R = 1 + p.r, e_init.w, p.T, p.a_pol)
+    lines!(ax, e_init.h.a_grid,  c0new[:, 1], color = :red)
+    lines!(ax, e_init.h.a_grid,  c0new[:, end], color = :red)
+    f
+end 
+
+let 
+    # Plots the wealth distribution in the laissez faire and in the new steady state after the policy change
+    pdf_0 = cumsum(sum(e_init.ws.pdf, dims = 2)[:])
+    f, ax = lines(e_init.h.a_grid, pdf_0, color = :black)
+    pdf_1 = cumsum(sum(e_final.ws.pdf, dims = 2)[:])
+    lines!(ax, e_init.h.a_grid, pdf_1, color = :red)
+    f
+end 
+
+# Computes the average wealth by income level in the laissez faire and in the new steady state 
+e_init.ws.pdf' * e_init.h.a_grid
+e_final.ws.pdf' * e_init.h.a_grid
