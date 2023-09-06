@@ -10,7 +10,7 @@ using Tullio
 using PrettyTables
 
 include("types.jl")
-include("preferences.jl")
+include("labor_preferences.jl")
 include("technology_and_fiscal.jl")
 include("calibration.jl")
 include("auxiliary_functions.jl")
@@ -38,13 +38,13 @@ export
 
 # household_problem_and_aggregation
     stationary, stationary!, is_pol_valid, 
-    labor_supply, asset_supply, consumption_alloc, aggregate_c, 
+    aggregate_labor, aggregate_assets, consumption_alloc, aggregate_consumption, 
 
 # stationary_equilibria.jl
     stationary_laissez_faire, stationary_equilibrium_given_k_b,
 
 # transition.jl
-    solve_transition,
+    solve_RPI_transition,
 
 # statistics_and_plots.jl
     generate_tables, 

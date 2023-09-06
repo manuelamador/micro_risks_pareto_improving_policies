@@ -42,7 +42,6 @@ EZ(;ies=1/2.0, ra=2.0, β) = EZ(ra == 1 ? (@warn("Log aggregator for risk not ye
 
 
 # CRRA 
-
 struct CRRA{T1<:AbstractSubUtility, T3} <: AbstractUtility
     risk::T1 # RA
     β::T3
@@ -79,7 +78,7 @@ Base.show(io::IO, m::GHH) = print(io, "GHH(θ=$(m.θ), ν=$(m.ν))")
 
 
 #######################################################
-# Household
+# Household struct
 #######################################################
 
 Base.@kwdef struct Household{U<:AbstractUtility, V, M1, M2, M3, M4}
@@ -106,7 +105,9 @@ function Base.show(io::IO, m::Household)
 end
 
 
-######## HouseholdWorkspace
+#######################################################
+# Household Workspace
+#######################################################
 
 struct HouseholdWorkspace{H, T1, T2, S}
     h :: H

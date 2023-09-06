@@ -83,7 +83,7 @@ k_path = [e_init.k for _ in b_path];
 
 # Solving the transition 
 
-@time path = solve_transition(e_init, e_final; k_path, b_path);
+@time path = solve_RPI_transition(e_init, e_final; k_path, b_path);
 
 # Implied aggreate savings elasticities: 
 
@@ -110,7 +110,7 @@ k_path_2 = let
     k_path_2
     end;
 
-@time path_2 = solve_transition(e_init, e_final_2; k_path = k_path_2, b_path);
+@time path_2 = solve_RPI_transition(e_init, e_final_2; k_path = k_path_2, b_path);
 
 # ## Transition To Golden Rule Without Debt 
 
@@ -121,7 +121,7 @@ end
 
 b_path_3 = [0.0 for _ in k_path_2];
 
-@time path_3 = solve_transition(e_init, e_final_3; k_path = k_path_2, b_path = b_path_3);
+@time path_3 = solve_RPI_transition(e_init, e_final_3; k_path = k_path_2, b_path = b_path_3);
 
 # ## Statistics
 
@@ -419,11 +419,11 @@ function pv_GE(
     w = 1.0  # Normalizing the wage
     T = 0.0
     ws = HouseholdWorkspace(; h, R = 1 + r_range[1], T, w)
-    n = labor_supply(h; w)
+    n = aggregate_labor(h; w)
 
     f = function (r) 
         stationary!(ws; R = 1 + r, T, w, verbose = false, value_tol, policy_tol, pdf_tol)
-        aa = asset_supply(h.a_grid, ws.pdf) 
+        aa = aggregate_assets(h.a_grid, ws.pdf) 
         dis =  aa / n * (1 - α) - α / (r + δ)
         return dis
     end 
