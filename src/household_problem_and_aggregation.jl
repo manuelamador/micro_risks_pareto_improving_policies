@@ -1,11 +1,14 @@
 
 # Household problem and aggregation 
 
+
+# minimum feasible transfer consistent with feasibility 
 minimum_feasible_transfer(h, w) = maximum(disutility_given_w(h.v; w = w * z) - 
     labor_income(h.v; w = w * z) for z in h.z_grid)
 
 
 # Household's euler equation 
+
 
 function backwards_euler_x(u::CRRA, p_vec, η_vec)
     ξ = get_inverse_ies(u)

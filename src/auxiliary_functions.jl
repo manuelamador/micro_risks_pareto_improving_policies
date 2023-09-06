@@ -1,5 +1,3 @@
-
-
 # helper function to compute the ergodic distribution from transition matrix P
 function ergodic(P)
     for i in axes(P, 1)
@@ -21,12 +19,14 @@ function interp1D(x::Real, xvec, yvec)
 end 
 
 
+# distance metric
 chebyshev(a, b) = @tullio (max) x = abs(a[i] - b[i])
 
 
+# range wiht log scale 
 logrange(start, stop, shifter, length) = (10^y - shifter for y in range(log10(start + shifter), log10(stop + shifter); length))
 
-
+# generates a vector
 function grid(; start = 0.0, stop = 15.0, length = 500, scale = :log, shifter = 1 - start)  
     if scale == :linear 
         grid = collect(range(start, stop, length = length))
