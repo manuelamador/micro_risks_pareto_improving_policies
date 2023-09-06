@@ -10,9 +10,9 @@ output(t::CobbDouglasTechnology; k, n) = t.A * k^t.α * n^(1- t.α)
 
 mpk(t::CobbDouglasTechnology; k, n) = t.α * t.A * (n / k)^(1 - t.α)
 
-w_from_r(t::CobbDouglasTechnology; r) = (1 - t.α) * (t.A / t.μ)^(1/(1-t.α)) * (t.α / (r + t.δ))^(t.α / (1 - t.α))
+mpl_from_mpk(t::CobbDouglasTechnology; mpk) = (1 - t.α) * (t.A / t.μ)^(1/(1-t.α)) * (t.α / mpk)^(t.α / (1 - t.α))
 
-k_from_r_n(t::CobbDouglasTechnology; r, n) = (t.α * t.A / (t.μ * (r + t.δ)))^(1/(1 - t.α)) * n 
+k_from_mpk_n(t::CobbDouglasTechnology; mpk, n) = (t.α * t.A / (t.μ * mpk))^(1/(1 - t.α)) * n 
 
 golden_rule_k(t::CobbDouglasTechnology; n) = (t.α * t.A / t.δ) ^ (1 / (1 - t.α)) * n
 

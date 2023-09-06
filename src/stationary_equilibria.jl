@@ -16,7 +16,7 @@ function stationary_laissez_faire(h, t; r_range,
             merge(hh_problem_options_baseline, hh_problem_kwargs)
     
     r0 = r_range[1]
-    w = w_from_r(t; r = r0)
+    w = mpl_from_mpk(t; mpk = r0 + t.δ)
     pars = (R = 1 + r0, T = zero(r0), w = w)
 
     ws = HouseholdWorkspace(; h, pars...)
@@ -36,12 +36,12 @@ end
 
 
 function _laissez_faire!(ws, r, h, t, verbose, p, stationary_kwargs)
-    w = w_from_r(t; r)
+    w = mpl_from_mpk(t; mpk = r + t.δ)
     pars = (R = 1 + r, T = zero(r), w)
     stationary!(ws; stationary_kwargs..., pars...)
     a = asset_supply(h.a_grid, ws.pdf)
     n = labor_supply(h; w = w)
-    k = k_from_r_n(t; r, n)
+    k = k_from_mpk_n(t; mpk = r + t.δ, n)
     excess = a - k
     verbose && next!(p, showvalues = [(:r, r), (:error, excess)])
     return (; excess, w, a, n, k)
