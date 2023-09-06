@@ -53,7 +53,7 @@ function jacobian_row!(cache::JacobianCache, s)
         for (path, signΔ) in [ (cache.up, 1), (cache.down, -1)]
             lower_weight = t > s ? ws.lower_weight : path[cap_s - (s - t)].lower_weight
             lower_index = t > s ? ws.lower_index : path[cap_s - (s - t)].lower_index
-            a = asset_supply(h.a_grid, path[t].pdf)
+            a = aggregate_assets(h.a_grid, path[t].pdf)
             adiff += a * signΔ 
             (t < cap_t) && forward_pdf!(path[t+1].pdf; h, path[t].pdf, lower_index, lower_weight)
         end
@@ -75,7 +75,7 @@ function jacobian(ws::HouseholdWorkspace; R, T, w, ΔR, ΔT, cap_t)
             for (path, signΔ) in ((cache.up, 1), (cache.down, -1))
                 lower_weight = t > s ? ws.lower_weight : path[cap_t - (s - t)].lower_weight
                 lower_index = t > s ? ws.lower_index : path[cap_t - (s - t)].lower_index
-                a = asset_supply(h.a_grid, path[t].pdf)
+                a = aggregate_assets(h.a_grid, path[t].pdf)
                 adiff += a * signΔ 
                 (t < cap_t) && forward_pdf!(path[t+1].pdf; h, path[t].pdf, lower_index, lower_weight)
             end
@@ -98,13 +98,13 @@ function pv_elasticities!(cache::JacobianCache, s; Rk)
         for (path, signΔ) in [ (cache.up, 1), (cache.down, -1)]
             lower_weight = t > s ? ws.lower_weight : path[cap_s - (s - t)].lower_weight
             lower_index = t > s ? ws.lower_index : path[cap_s - (s - t)].lower_index
-            a = asset_supply(h.a_grid, path[t].pdf)
+            a = aggregate_assets(h.a_grid, path[t].pdf)
             adiff += a * signΔ
             (t < cap_t) && forward_pdf!(path[t+1].pdf; h, path[t].pdf, lower_index, lower_weight)
         end
         pv += adiff * Rk^(- t)
     end 
-    aa = asset_supply(h.a_grid, ws.pdf)
+    aa = aggregate_assets(h.a_grid, ws.pdf)
     return pv * (Rk - R) / (2 * ΔR) / aa * Rk^s
 end 
 

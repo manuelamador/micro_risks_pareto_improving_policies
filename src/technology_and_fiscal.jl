@@ -1,6 +1,3 @@
-
-
-
 ################################################
 # Technology Methods
 ###############################################
@@ -23,7 +20,12 @@ y(e) = output(e.t; e.k, e.n)
 # Fiscal policy methods
 ###############################################
 
-function get_T(t; b, bprime, r, k, k0, r0, n0) 
-    # Use Lemma 1 to obtain T assuming goverment BC holds with equality
-    return output(t; k, n = n0) - output(t; k = k0, n = n0) + (r0 + t.δ) * k0 - (r + t.δ) * k - (1 + r) * b + bprime 
-end 
+"""
+    get_T(t; b, bprime, r, k, r0, k0, n0)
+
+Use Lemma 1 to obtain transfers `T` assuming goverment BC holds with equality. `(r0, k0, n0)` are the initial values of `(r, k)`. 
+The value of `b` and `bprime` are the values of the government debt in the current and next period, respectively.
+The wage `w` is assumed to be fixed at the initial equilibrium value, so is the labor supply, given no wealth effects.
+"""
+get_T(t; b, bprime, r, k, r0, k0, n0) = output(t; k, n = n0) - output(t; k = k0, n = n0) + (r0 + t.δ) * k0 - (r + t.δ) * k - (1 + r) * b + bprime 
+
