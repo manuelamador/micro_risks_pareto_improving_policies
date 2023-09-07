@@ -182,9 +182,11 @@ end
 # Technology
 #######################################################
 
+abstract type AbstractTechnology end
+
 
 # Technology struct incorporating TFP, and depreciation
-Base.@kwdef struct CobbDouglasTechnology{R}
+Base.@kwdef struct CobbDouglasTechnology{R} <: AbstractTechnology
     α::R = 0.33 
     A::R = 1.0
     δ::R = 0.1

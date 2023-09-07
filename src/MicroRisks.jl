@@ -16,7 +16,7 @@ include("calibration.jl")
 include("auxiliary_functions.jl")
 include("household_problem_and_aggregation.jl")
 include("stationary_equilibria.jl")
-include("transition.jl")
+include("transitions.jl")
 include("statistics.jl")
 include("jacobian.jl")
 

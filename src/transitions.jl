@@ -8,39 +8,23 @@
    
 Creates a workspace for the transition path at one date.
 """
-function _transition_item(h::Household)  
+function _transition_item(h::Household, t::AbstractTechnology)  
     (; v, η, a_pol, pdf, lower_index, lower_weight, a_tmp) = _generate_base_workspace_matrices(h)
-
     w = r = T = a = k = b = zero(eltype(h.a_grid)) 
-    return (; h, v, η, a_pol, pdf, lower_index, lower_weight, a_tmp, r, w, T, a, k, b)
+    return (; h, t, v, η, a_pol, pdf, lower_index, lower_weight, a_tmp, r, w, T, a, k, b)
 end 
 
 
 """
-    _initialize_path(e_init, e_final; k_path)
+    _initialize_path(e_init; k_path)
 
 Initializes the transition path from `e_init` to `e_final` with the given `k_path`. The length of the transition path 
 is the length of `k_path`.
 """
-function _initialize_path(e_init, e_final; k_path)
-    h = e_init.h
-
-    path = StructArray(_transition_item(h) for _ in k_path)
+function _initialize_path(e_init::StationaryEquilibrium; k_path)
+    path = StructArray(_transition_item(e_init.h, e_init.t) for _ in k_path)
     path[1].pdf .= e_init.ws.pdf  # initial distribution
- 
-    path[end].v .= e_final.ws.v 
-    path[end].η .= e_final.ws.η
-    path[end].a_pol .= e_final.ws.a_pol
-    path[end].lower_index .= e_final.ws.lower_index
-    path[end].lower_weight .= e_final.ws.lower_weight
-
-    path.r[end] = e_final.r
-    path.b[end] = e_final.b
-    path.k[end] = e_final.k
-    path.a[end] = e_final.a
-
     path.w .= e_init.w  # the wage is constant along the path. 
-
     return path 
 end 
 
@@ -76,7 +60,7 @@ function solve_RPI_transition_robust(
         nlsolve_baseline_kwargs :
         merge(nlsolve_baseline_kwargs, nlsolve_kwargs)
 
-    path = _initialize_path(e_init, e_final; k_path)
+    path = _initialize_path(e_init; k_path)
 
     if isnothing(r_path) 
         r_path_rest = fill(e_final.r, length(k_path) - 1)
@@ -111,7 +95,7 @@ function solve_RPI_transition(
     e_init, e_final; k_path, b_path, r_path = nothing, verbose = true, 
     max_iters = _ZERO_MAX_ITERS, tol = _ZERO_FTOL
 )    
-    path = _initialize_path(e_init, e_final; k_path)
+    path = _initialize_path(e_init; k_path)
 
     if isnothing(r_path) 
         r_path_rest = fill(e_final.r, length(k_path) - 1)
