@@ -490,17 +490,23 @@ end
 
 # ## Saving the Figures and Statistics
 
-save(joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_fixed_k.pdf"), f1)
-save(joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_golden_k.pdf"), f2)
-save(joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_no_debt.pdf"), f3)
-save(joinpath(@__DIR__, "..", "output", "figures", "steady_state_transfers.pdf"), f4)
+# +
+SAVE_FIGS_TABS = false 
 
-save(joinpath(@__DIR__, "..", "output", "figures", "pv_elasticities_regions_PE.pdf"), fig_pv_PE);
-save(joinpath(@__DIR__, "..", "output", "figures", "pv_elasticities_regions_GE.pdf"), fig_pv_GE);
-
-open(joinpath(@__DIR__, "..", "output", "tables", "statistics.txt"), "w") do file
-    write(file, tab_1_2...)
-end;
+if SAVE_FIGS_TABS
+    save(joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_fixed_k.pdf"), f1)
+    save(joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_golden_k.pdf"), f2)
+    save(joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_no_debt.pdf"), f3)
+    save(joinpath(@__DIR__, "..", "output", "figures", "steady_state_transfers.pdf"), f4)
+    
+    save(joinpath(@__DIR__, "..", "output", "figures", "pv_elasticities_regions_PE.pdf"), fig_pv_PE);
+    save(joinpath(@__DIR__, "..", "output", "figures", "pv_elasticities_regions_GE.pdf"), fig_pv_GE);
+    
+    open(joinpath(@__DIR__, "..", "output", "tables", "statistics.txt"), "w") do file
+        write(file, tab_1_2...)
+    end
+end; 
+# -
 
 # ## SOME ADDITIONAL FIGURES 
 
