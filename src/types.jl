@@ -47,9 +47,9 @@ struct CRRA{T1<:AbstractSubUtility, T3} <: AbstractUtility
     β::T3
 end
 
-get_ra(m::CRRA) = get_power(m.risk)
-get_inverse_ies(m::CRRA) = get_power(m.risk)  
-get_ies(m::CRRA) = 1/get_power(m.risk)
+get_ra(m::CRRA) = get_parameter(m.risk)
+get_inverse_ies(m::CRRA) = get_parameter(m.risk)  
+get_ies(m::CRRA) = 1/get_parameter(m.risk)
 get_β(m::CRRA) = m.β
 
 Base.show(io::IO, m::CRRA) = print(io, "CRRA(ra=$(get_ra(m)), β=$(m.β))")
@@ -101,7 +101,7 @@ function Base.show(io::IO, m::Household)
         z_grid_string = "$z_grid"
         P_string = "$P"
     end
-    print(io, "$u, v=$v, z_grid=$z_grid_string, P=$P_string, a_grid = $(first(a_grid))..$(length(a_grid))pts..$(last(a_grid))")
+    print(io, "$u, v=$v, z_grid=$z_grid_string, P=$P_string, a_grid = [$(first(a_grid))..$(length(a_grid))pts..$(last(a_grid))]")
 end
 
 
@@ -194,8 +194,8 @@ Base.@kwdef struct CobbDouglasTechnology{R} <: AbstractTechnology
 end
 
 function Base.show(io::IO, t::CobbDouglasTechnology)
-    (; α, A, δ) = t
-    print(io, "α=$α, A=$A, δ=$δ")
+    (; α, A, δ, μ) = t
+    print(io, "α=$α, A=$A, δ=$δ, μ=$μ")
 end
 
 
