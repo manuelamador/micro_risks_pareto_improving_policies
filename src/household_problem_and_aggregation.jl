@@ -17,68 +17,97 @@ minimum_feasible_transfer(h, w) = maximum(disutility_given_w(h.v; w = w * z) -
 
 
 
-"""
-    backwards_euler_x(u::CRRA, pp, nn)
+# """
+#     backwards_euler_x(u::CRRA, pp, nn)
 
-Returns a vector of `x_t` that solves the Euler equation with equality with t+1 scaled marginal utilities given by vector `nn` with probability distribution `pp`.  
+# Returns a vector of `x_t` that solves the Euler equation with equality with t+1 scaled marginal utilities given by vector `nn` with probability distribution `pp`.  
 
-# Arguments 
-- `u`: utility function.
-- `pp`: probability vector over states at t+1.
-- `nn`: associated vector of "scaled" marginal utility at t+1, i.e. η_t+1 = R_{t+1} x_{t+1}^(-1/ξ).
-"""
-function backwards_euler_x(u::CRRA, pp, nn)
+# # Arguments 
+# - `u`: utility function.
+# - `pp`: probability vector over states at t+1.
+# - `nn`: associated vector of "scaled" marginal utility at t+1, i.e. η_t+1 = R_{t+1} x_{t+1}^(-1/ξ).
+# """
+# function backwards_euler_x(u::CRRA, pp, nn)
+#     ξ = get_inverse_ies(u)
+#     β = get_β(u)
+#     Evx = zero(eltype(nn))
+#     for (p, η) in zip(pp, nn)
+#         Evx += p * (η)^(-ξ)
+#     end 
+#     x = (β * Evx)^(-1/ξ)    
+#     return x
+# end
+
+
+# """
+#     backwards_euler_x(u::EZ, pp, vv, nn)
+
+# Returns a vector of `x_t` that solves the Euler equation with equality with t+1 scaled marginal utilities given by vector `nn` with probability distribution `pp`.
+
+# # Arguments
+# - `u`: utility function.
+# - `pp`: probability vector over states at t+1.
+# - `vv`: associated vector of values at t+1.
+# - `nn`: associated vector of "scaled" marginal utility at t+1, i.e. η_t+1 = R_{t+1} x_{t+1}^(-1/ξ).
+# """    
+# function backwards_euler_x(u::EZ, pp, vv, nn)
+#     ξ = get_inverse_ies(u)
+#     γ = get_ra(u)
+#     β = get_β(u)
+#     Ev = Evx = zero(eltype(vv))
+#     for (v, η, p) in zip(vv, nn, pp)
+#         Evx += p * (v)^((ξ - γ)) * (η)^(-ξ)
+#         Ev += p * u.risk(v)
+#     end 
+#     x = (β * inverse(u.risk, Ev^((γ - ξ))) * Evx)^(-1/ξ)
+#     return x
+# end
+
+
+function backwards_euler_x(u::CRRA, P, i, s, next_values)
+    η = next_values.η
     ξ = get_inverse_ies(u)
     β = get_β(u)
-    Evx = zero(eltype(nn))
-    for (p, η) in zip(pp, nn)
-        Evx += p * (η)^(-ξ)
+    Evx = zero(eltype(η))
+    for j in axes(P, 2)
+        Evx += P[s, j] * (η[i, j])^(-ξ)
     end 
     x = (β * Evx)^(-1/ξ)    
     return x
 end
 
 
-"""
-    backwards_euler_x(u::EZ, pp, vv, nn)
-
-Returns a vector of `x_t` that solves the Euler equation with equality with t+1 scaled marginal utilities given by vector `nn` with probability distribution `pp`.
-
-# Arguments
-- `u`: utility function.
-- `pp`: probability vector over states at t+1.
-- `vv`: associated vector of values at t+1.
-- `nn`: associated vector of "scaled" marginal utility at t+1, i.e. η_t+1 = R_{t+1} x_{t+1}^(-1/ξ).
-"""    
-function backwards_euler_x(u::EZ, pp, vv, nn)
+function backwards_euler_x(u::EZ, P, i, s, next_values)
+    v = next_values.v
+    η = next_values.η
     ξ = get_inverse_ies(u)
     γ = get_ra(u)
     β = get_β(u)
-    Ev = Evx = zero(eltype(vv))
-    for (v, η, p) in zip(vv, nn, pp)
-        Evx += p * (v)^((ξ - γ)) * (η)^(-ξ)
-        Ev += p * u.risk(v)
-    end 
+    Ev = Evx = zero(eltype(v))
+    for j in axes(P, 2)
+        Evx += P[s, j] * (v[i, j])^((ξ - γ)) * (η[i, j])^(-ξ)
+        Ev += P[s, j] * u.risk(v[i, j])
+    end
     x = (β * inverse(u.risk, Ev^((γ - ξ))) * Evx)^(-1/ξ)
     return x
 end
 
 
-"""
-    _backwards_euler_x_helper(u, P′, i, s, next_values)
+# """
+#     _backwards_euler_x_helper(u, P′, i, s, next_values)
 
-Helper function for `backwards_once!` that calls the appropriate `backwards_euler_x` function depending on the type of utility function, and the current state (i, s). 
+# Helper function for `backwards_once!` that calls the appropriate `backwards_euler_x` function depending on the type of utility function, and the current state (i, s). 
 
-# Arguments
-- `u`: utility function.
-- `P′`: transition matrix.
-- `i`: index of current asset position.
-- `s`: index of current employment state.
-- `next_values`: struct containing next period's values, which includes the vector of `η`, and `v` (the latter for the case of Epstein-Zin). 
+# # Arguments
+# - `u`: utility function.
+# - `P′`: transition matrix.
+# - `i`: index of current asset position.
+# - `s`: index of current employment state.
+# - `next_values`: struct containing next period's values, which includes the vector of `η`, and `v` (the latter for the case of Epstein-Zin). 
 
-"""
-_backwards_euler_x_helper(u::CRRA, P′, i, s, next_values) = backwards_euler_x(u, view(P′, :, s), view(next_values.η, i, :))
-_backwards_euler_x_helper(u::EZ, P′, i, s, next_values) = backwards_euler_x(u, view(P′, :, s), view(next_values.v, i, :), view(next_values.η, i, :))
+# """
+# _backwards_euler_x_helper(u::CRRA, P′, i, s, next_values) = backwards_euler_x(u, view(P′, :, s), view(next_values.η, i, :))
+# _backwards_euler_x_helper(u::EZ, P′, i, s, next_values) = backwards_euler_x(u, view(P′, :, s), view(next_values.v, i, :), view(next_values.η, i, :))
 
 
 """
@@ -100,7 +129,6 @@ The values of `current_values.η` and `current_values.v` are modified (the latte
 function backwards_once!(h, current_values; next_values, R, T, w, a_tmp = similar(current_values.η))   
     η_now = current_values.η
     (; u) = h
-    P′ = h.Pprime
     ξ = get_inverse_ies(u)
     R_ = R^(-1/ξ)
 
@@ -114,7 +142,7 @@ function backwards_once!(h, current_values; next_values, R, T, w, a_tmp = simila
         # Endogenous Grid Method 
         for i in eachindex(h.a_grid)  
             # find the associated x according the the Euler equation and next_values
-            x = _backwards_euler_x_helper(h.u, P′, i, s, next_values)
+            x = backwards_euler_x(h.u, h.P, i, s, next_values)
             a_next = h.a_grid[i]  # associated next period policy
             # computes the level of assets associated with the Euler equation result
             a_tmp[i, s]  = (x + a_next - add) / R
@@ -126,7 +154,7 @@ function backwards_once!(h, current_values; next_values, R, T, w, a_tmp = simila
             a_prime = clamp(a_prime, a_min, a_max)
             x = R * a + add - a_prime
             η_now[i, s] = R_ * x
-            _backward_once_helper!(u, current_values, next_values, h, a_prime, P′, x, i, s)
+            _backward_once_helper!(u, current_values, next_values, h, a_prime, h.P, x, i, s)
         end
     end    
 end
@@ -135,18 +163,18 @@ end
 _backward_once_helper!(::CRRA, args...) = nothing
 
 """
-    _backward_once_helper!(u::EZ, current_values, next_values, h, a_prime, P′, x, i, s)
+    backward_once_assignment_helper!(u::EZ, current_values, next_values, h, a_prime, P, x, i, s)
 
 Modifies the value function at state (i, s) contained in `current_values` using the values in `next_values` and the optimal policies `x` and `a_prime`. 
 This is for the case of Epstein-Zin utility.
 """
-function _backward_once_helper!(u::EZ, current_values, next_values, h, a_prime, P′, x, i, s)
+function _backward_once_helper!(u::EZ, current_values, next_values, h, a_prime, P, x, i, s)
     β = u.β
 
     Ev = zero(a_prime)
     for s2 in axes(next_values.v, 2)
         v_prime = interp1D(a_prime, h.a_grid, view(next_values.v, :, s2))
-        Ev += P′[s2, s] * u.risk(v_prime)
+        Ev += P[s, s2] * u.risk(v_prime)
     end
     current_values.v[i, s] =
         inverse(u.temporal, (1 - β) * u.temporal(x) + β * u.temporal(inverse(u.risk, Ev)))
@@ -243,6 +271,7 @@ end
 Computes the aggregate asset supply.
 """
 aggregate_assets(a_grid, pdf) = @tullio s := a_grid[i] * pdf[i, s]
+aggregate_assets(h::Household, pdf) = aggregate_assets(h.a_grid, pdf)
 
 
 """ 
@@ -337,9 +366,9 @@ end
 
 
 # Helper functions for stationary!
-_get_Euler_iterator(::EZ, ws) = ((; v = ws.v, η = ws.η), (; v = ws.v_tmp, η = ws.η_tmp)); 
-_get_Euler_iterator(::CRRA, ws) = ((; η = ws.η), (; η = ws.η_tmp)); 
-_get_Euler_iterator(ws) = _get_Euler_iterator(ws.h.u, ws)
+_get_Euler_iterators(::EZ, ws) = ((; v = ws.v, η = ws.η), (; v = ws.v_tmp, η = ws.η_tmp)); 
+_get_Euler_iterators(::CRRA, ws) = ((; η = ws.η), (; η = ws.η_tmp)); 
+_get_Euler_iterators(ws) = _get_Euler_iterators(ws.h.u, ws)
 
 _distance_Euler_iterators(::CRRA, iterator_0, iterator_1) = chebyshev(iterator_0.η, iterator_1.η)
 _distance_Euler_iterators(::EZ, iterator_0, iterator_1) = (; v = chebyshev(iterator_0.v, iterator_1.v), 
@@ -377,7 +406,7 @@ function stationary!(
 )
     (; h, a_tmp) = ws
 
-    iterator_0, iterator_1 = _get_Euler_iterator(ws)
+    iterator_0, iterator_1 = _get_Euler_iterators(ws)
     i = 1
     while true
         backwards_once!(h, iterator_1; next_values = iterator_0, R, T, w, a_tmp)

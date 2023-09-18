@@ -29,7 +29,7 @@ function stationary_laissez_faire(h, t; r_range,
             merge(hh_problem_options_baseline, hh_problem_kwargs)
     
     r0 = r_range[1]
-    w = mpl_from_mpk(t; mpk = r0 + t.δ)
+    w = mpl_from_mpk(t; mpk = (r0 + t.δ) * t.μ) / t.μ
     pars = (R = 1 + r0, T = zero(r0), w = w)
     ws = HouseholdWorkspace(; h, pars...)
 
@@ -55,12 +55,12 @@ Get the residual of the stationary equilibrium given the interest rate `r` and t
 It modifies the `ws` workspace in place when doing the calculations. 
 """
 function _residual_stationary_laissez_faire!(ws, r, h, t, verbose, p, stationary_kwargs)
-    w = mpl_from_mpk(t; mpk = r + t.δ)
+    w = mpl_from_mpk(t; mpk = (r + t.δ) * t.μ) / t.μ
     pars = (R = 1 + r, T = zero(r), w)
     stationary!(ws; stationary_kwargs..., pars...)
     a = aggregate_assets(h.a_grid, ws.pdf)
     n = aggregate_labor(h; w = w)
-    k = k_from_mpk_n(t; mpk = r + t.δ, n)
+    k = k_from_mpk_n(t; mpk = t.μ * (r + t.δ), n)
     residual = a - k
     verbose && next!(p, showvalues = [(:r, r), (:error, residual)])
     return (; residual, w, a, n, k)

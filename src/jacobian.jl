@@ -1,8 +1,8 @@
 
 
 function JacobianCache(ws::HouseholdWorkspace; cap_s, cap_t, R, T, w, ΔR, ΔT)
-    path_up = StructArray(_generate_base_workspace_matrices(ws.h) for _ in 1:cap_t)
-    path_down = StructArray(_generate_base_workspace_matrices(ws.h) for _ in 1:cap_t)
+    path_up = StructArray(_workspace_matrices(ws.h) for _ in 1:cap_t)
+    path_down = StructArray(_workspace_matrices(ws.h) for _ in 1:cap_t)
     cache = JacobianCache(path_up, path_down, cap_s, cap_t, ws, R, T, ΔR, ΔT)
     reset!(cache, ws; R, T, w, ΔR, ΔT)
     return cache

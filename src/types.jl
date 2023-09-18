@@ -126,7 +126,7 @@ end
 
 
 function HouseholdWorkspace(h::Household)  
-    (; v, η, a_pol, pdf, lower_index, lower_weight, a_tmp) = _generate_base_workspace_matrices(h)
+    (; v, η, a_pol, pdf, lower_index, lower_weight, a_tmp) = _workspace_matrices(h)
 
     v_tmp = similar(v)
     η_tmp = similar(v)
@@ -134,10 +134,10 @@ function HouseholdWorkspace(h::Household)
      
     return HouseholdWorkspace(h, v, η, a_pol, pdf, lower_index, lower_weight, v_tmp, η_tmp, a_tmp, pdf_tmp)
 end 
-HouseholdWorkspace(;h, R, T, w) = _initialize_HH_ws!(HouseholdWorkspace(h), R, T, w)
+HouseholdWorkspace(;h, R, T, w) = _initialize_ws!(HouseholdWorkspace(h), R, T, w)
 
 
-function _generate_base_workspace_matrices(h::Household)
+function _workspace_matrices(h::Household)
     η = Array{eltype(h.a_grid)}(undef, length(h.a_grid), length(h.z_grid))
     v = similar(η) 
     a_pol = similar(η)
@@ -150,7 +150,7 @@ function _generate_base_workspace_matrices(h::Household)
 end 
 
 
-function _initialize_HH_ws!(ws::HouseholdWorkspace, R, T, w)
+function _initialize_ws!(ws::HouseholdWorkspace, R, T, w)
     h = ws.h
     u = h.u
     ξ = get_inverse_ies(u) 
@@ -222,6 +222,33 @@ function Base.show(io::IO, e::StationaryEquilibrium)
     print(io, "Stationary Equilibrium. Household: $h, Technology: $t, r=$r, w=$w, T=$T, a=$a, k=$k, b=$b, n=$n")
 end
 
+
+####################################################
+# Transition Struct
+####################################################
+
+
+
+
+Base.@kwdef mutable struct TransitionItem{T1, T2, T3, T4, T5, T6, T7, T8, T9, R}
+    h::T1
+    t::T2
+    v::T3
+    η::T4
+    a_pol::T5
+    pdf::T6
+    lower_index::T7
+    lower_weight::T8
+    a_tmp::T9
+    r::R
+    rk::R
+    w::R
+    T::R
+    a::R
+    k::R
+    b::R
+    n::R
+end 
 
 
 ####################################################
