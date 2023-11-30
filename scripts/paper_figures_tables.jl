@@ -534,3 +534,5 @@ end
 # Computes the average wealth by income level in the laissez faire and in the new steady state 
 e_init.ws.pdf' * e_init.h.a_grid
 e_final.ws.pdf' * e_init.h.a_grid
+
+

@@ -19,6 +19,7 @@ include("stationary_equilibria.jl")
 include("transitions.jl")
 include("statistics.jl")
 include("jacobian.jl")
+include("stochastic_transition.jl")
 
 const _TOL = 1e-12
 const _ZERO_FTOL = 1e-08
