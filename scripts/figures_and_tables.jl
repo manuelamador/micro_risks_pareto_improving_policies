@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
 # # Micro Risks and Pareto Improving Policies 
 
-
-import Pkg; 
-Pkg.activate(joinpath(@__DIR__, ".."))
-Pkg.instantiate()
-
-
 using Revise
 using MicroRisks
 using ProgressMeter
@@ -14,7 +8,6 @@ using CairoMakie
 using LaTeXStrings
 using StatsBase
 using Roots
-using Interpolations
 using PrettyTables
 
 _φ = 1/Base.MathConstants.φ
@@ -267,10 +260,10 @@ f3 = do_plots(path_3, e_init, legend_pos = :rb, last_plot = true)
 
 
 ############################################################################
-# # SEGNIORAGE PLOTS
+# # SEIGNIORAGE PLOTS
 ############################################################################
 
-# ##  Steady State Segniorage Plots
+# ##  Steady State seigniorage Plots
 
 # Increasing the amax so that it doesn't bind
 h_2 = let 
@@ -289,7 +282,7 @@ h_2 = let
         v = v, P = P, z_grid = z_vals)
 end
 
-@info "Computing the equilibria for segniorage plots"
+@info "Computing the equilibria for seigniorage plots"
 # Solve laissez-faire economy
 @time e_init_2 = stationary_laissez_faire(h_2, t; r_range = (-0.02, 0.0), verbose = true)
 
@@ -316,7 +309,7 @@ end
 # out = @showprogress map(f, 2.6:-0.2:0.2)
 push!(out, e_init_2);
 
-@info "Generating the segniorage plot"
+@info "Generating the seigniorage plot"
 f4 = let
     b_y = [eq.b / y(eq) for eq in out]
     rb = [-eq.r * eq.b / y(eq) for eq in out]
