@@ -19,14 +19,24 @@ using PrettyTables
 
 _φ = 1/Base.MathConstants.φ
 
-# ## Delete all output files 
+
+# ## Delete all output files in the output directory 
+
 for (root, dirs, files) in walkdir(joinpath(@__DIR__, "..", "output"))
-    foreach(rm, filter(endswith(".pdf"), files)) 
-    foreach(rm, filter(endswith(".txt"), files))
+    for file in files
+        if endswith(file, ".pdf") || endswith(file, ".txt")
+            rm(joinpath(root, file))
+        end
+    end
 end
 
+# ## Recreate the output directory structure if necessary 
+
+mkpath(joinpath(@__DIR__, "..", "output", "tables"))
+mkpath(joinpath(@__DIR__, "..", "output", "figures"))
 
 
+# ## Run simulations and repopulate the output directory
 
 # ## Benchmark Economy
 
