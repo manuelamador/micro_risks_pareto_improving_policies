@@ -63,7 +63,7 @@ Solves for the RPI transition (constant wage/profits) path from a stationary equ
 """
 
 function solve_laissez_faire_transition_AR(
-    e_init, e_final; b_path, A_path, probH, r_path = nothing, verbose = true,
+    e_init, e_final; b_path, A_path, probH, r_path = nothing, verbose = false,
     nlsolve_kwargs = nothing)
     nlsolve_baseline_kwargs = (
         ftol = _ZERO_FTOL,
@@ -181,7 +181,7 @@ Solves for the RPI transition (laissez_faire economy with agg. shocks) path from
 - `nlsolve_kwargs`: Keyword arguments to pass to the `nlsolve` solver.
 """
 
-function solve_RPI_transition_AR(e_init, e_final; k_path, b_path, r_path_lf, w_path_lf, probH, r_path = nothing, verbose = true,
+function solve_RPI_transition_AR(e_init, e_final; k_path, b_path, r_path_lf, w_path_lf, probH, r_path = nothing, verbose = false,
     nlsolve_kwargs = nothing)
     nlsolve_baseline_kwargs = (
         ftol = _ZERO_FTOL,
@@ -310,7 +310,7 @@ Households now solve a portfolio problem, choosing how many units of bonds and c
 - `nlsolve_kwargs`: Keyword arguments to pass to the `nlsolve` solver.
 """
 function solve_RPI_transition_portfolio_AR(
-    e_init, e_final; k_path, b_path, r_path_lf, w_path_lf, probH, r_path = nothing, verbose = true,
+    e_init, e_final; k_path, b_path, r_path_lf, w_path_lf, probH, r_path = nothing, verbose = false,
     nlsolve_kwargs = nothing)
     nlsolve_baseline_kwargs = (
         ftol = 1e-06,
@@ -322,7 +322,7 @@ function solve_RPI_transition_portfolio_AR(
     )
     
     nlsolve_kwargs_merged = isnothing(nlsolve_kwargs) ?             
-        nlsolve_baseline_kwargs : nlsolve_kwargs
+        nlsolve_baseline_kwargs : merge(nlsolve_baseline_kwargs, nlsolve_kwargs)
 
     path = _initialize_path_AR(e_init, e_final; b_path)
 
