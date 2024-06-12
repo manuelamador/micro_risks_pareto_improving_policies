@@ -136,3 +136,78 @@ function _k_b_residual!(ws, r, e_init, k, b, min_T, verbose, p, stationary_kwarg
     return (; residual, a, T)
 end
 
+
+#############################################################################
+# FUNCTIONS HIGH INITIAL DEBT
+#############################################################################
+"""
+    stationary_high_b(h, t, b; r_range[, verbose, hh_problem_kwargs, solver, find_zero_kwargs])
+
+Solve for the stationary equilibrium of the high initial debt economy with the given household problem and technology. 
+
+# Arguments
+- `h`: Household struct
+- `t`: Technology struct
+- `b`: Initial debt level
+- `r_range`: Range of interest rates to search over 
+- `hh_problem_kwargs`: Keyword arguments to pass to the household problem solver.
+- `find_zero_kwargs`: Keyword arguments to pass to the `find_zero` solver.
+- `solver`: Solver to use for finding the interest rate.
+- `verbose`: Whether to show progress of the solver.
+"""
+
+function stationary_high_b(h, t, b; r_range, 
+    verbose = true, 
+    hh_problem_kwargs = nothing,
+    find_zero_kwargs = (;atol = _ZERO_FTOL),
+    solver = A42()
+)
+
+    hh_problem_options_baseline = (; 
+        verbose = false
+    ) 
+
+    stationary_kwargs = isnothing(hh_problem_kwargs) ?
+            hh_problem_options_baseline : 
+            merge(hh_problem_options_baseline, hh_problem_kwargs)
+    
+    r0 = r_range[1]
+    w = mpl_from_mpk(t; mpk = r0 + t.δ)
+    pars = (R = 1 + r0, T = -r0*b, w = w)
+
+    ws = HouseholdWorkspace(; h, pars...)
+    min_T = minimum_feasible_transfer(h, w)
+
+    p = ProgressUnknown()
+    f = (r) -> _residual_stationary_high_b!(ws, r, h, t, b, min_T, verbose, p, stationary_kwargs).residual 
+    r = find_zero(f, r_range, solver; find_zero_kwargs...)
+    (; w, n, k, a, T) = _residual_stationary_high_b!(ws, r, h, t, b, min_T, false, p, stationary_kwargs)
+    verbose && finish!(p, showvalues = [(:r, r), (:error, a - k - b)])
+
+    e = StationaryEquilibrium(;
+        h, t, ws, w, n, k, a, r, 
+        T = -r*b, b = b
+    )
+    return e
+end
+
+"""
+    _residual_stationary_high_b!(ws, r, h, t, b, min_T, verbose, p, stationary_kwargs)
+
+Get the residual of the stationary equilibrium given initial `b`, for the interest rate `r` and the household and technology structs `h` and `t`.
+Modifies the `ws` workspace in place when doing the calculations.
+"""
+
+function _residual_stationary_high_b!(ws, r, h, t, b, min_T, verbose, p, stationary_kwargs)
+    w = mpl_from_mpk(t; mpk = r + t.δ)
+    T = -r*b
+    (T <= min_T) && (return (; residual = 1e10))
+
+    stationary!(ws; R = 1 + r, T = -r*b, w = w, stationary_kwargs...)
+    a = aggregate_assets(h.a_grid, ws.pdf)
+    n = aggregate_labor(h; w = w)
+    k = k_from_mpk_n(t; mpk = r + t.δ, n)
+    residual = a - k - b
+    verbose && next!(p, showvalues = [(:r, r), (:error, residual)])
+    return (; residual, w, a, n, k, T)
+end
