@@ -943,6 +943,13 @@ save(joinpath(@__DIR__, "..", "output", "figures", "transition_aggregate_risk.pd
 
 # Save tables in the "output/tables" directory
 
-open(joinpath(@__DIR__, "..", "output", "tables", "tables_1_and_2.txt"), "w") do file
-    write(file, tab_all...)
-end;
+open(joinpath(@__DIR__, "..", "output", "tables", "tables_1.txt"), "w") do file
+    write(file, tab_all[2])
+end
+
+open(joinpath(@__DIR__, "..", "output", "tables", "tables_2.txt"), "w") do file
+    write(file, tab_all[1])
+end
+
+
+
