@@ -169,9 +169,10 @@ Modifies the matrix `a_pol` in place.
 """
 function asset_policy_given_η!(a_pol; h, η, R, T, w)
     ξ = get_inverse_ies(h.u) 
-    @tullio a_pol[i, s] = R * h.a_grid[i] + T + labor_income(h.v; w = w * h.z_grid[s]) -  η[i, s] * R^(1/ξ) - disutility_given_w(h.v; w = w * h.z_grid[s])
+    for s in eachindex(h.z_grid), i in eachindex(h.a_grid)
+        a_pol[i, s] = R * h.a_grid[i] + T + labor_income(h.v; w = w * h.z_grid[s]) -  η[i, s] * R^(1/ξ) - disutility_given_w(h.v; w = w * h.z_grid[s])
+    end 
 end
-
 
 """
     asset_policy_given_η!(ws::HouseholdWorkspace; R, T, w)
@@ -242,7 +243,13 @@ end
 
 Computes the aggregate asset supply.
 """
-aggregate_assets(a_grid, pdf) = @tullio s := a_grid[i] * pdf[i, s]
+function aggregate_assets(a_grid, pdf)
+    assets = zero(eltype(pdf))
+    for s in axes(pdf, 2), i in axes(pdf, 1)
+        assets += a_grid[i] * pdf[i, s]
+    end 
+    return assets
+end 
 
 
 """ 
@@ -258,8 +265,13 @@ Returns the aggregate consumption given the policy function `a_pol` and the prob
 - `a_pol`: policy function.
 - `pdf`: probability distribution.
 """ 
-aggregate_consumption(h; R, w, T, a_pol, pdf) = @tullio threads=true tot :=  (R * h.a_grid[i] + T + labor_income(h.v; w = w * h.z_grid[s]) - a_pol[i, s]) * pdf[i, s]
-
+function aggregate_consumption(h; R, w, T, a_pol, pdf)
+    tot = zero(eltype(pdf))
+    for s in axes(pdf, 2), i in axes(pdf, 1)
+        tot += (R * h.a_grid[i] + T + labor_income(h.v; w = w * h.z_grid[s]) - a_pol[i, s]) * pdf[i, s]
+    end 
+    return tot 
+end 
 
 """
     aggregate_labor(h; w)

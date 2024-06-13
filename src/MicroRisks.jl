@@ -6,7 +6,6 @@ using Roots
 using NLsolve
 using StructArrays
 using StatsBase
-using Tullio
 using PrettyTables
 using Interpolations
 

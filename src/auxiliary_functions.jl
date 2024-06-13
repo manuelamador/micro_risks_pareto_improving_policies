@@ -20,7 +20,13 @@ end
 
 
 # distance metric
-chebyshev(a, b) = @tullio (max) x = abs(a[i] - b[i])
+function chebyshev(a, b)
+    x = zero(eltype(a))
+    for (ai, bi) in zip(a, b)
+        x = max(x, abs(ai - bi))
+    end 
+    return x
+end
 
 
 # range wiht log scale 
