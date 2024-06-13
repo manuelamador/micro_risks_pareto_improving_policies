@@ -786,11 +786,15 @@ b_path_AR = [b_path_H b_path_L];
 @info "Solving for transition with aggregate risk"
 @time path_AR = solve_RPI_transition_AR(e_init_AR, e_final_AR; k_path = path_lf.k, b_path = b_path_AR, r_path_lf = path_lf.r, w_path_lf = path_lf.w, probH, r_path = path_lf.r);
 
+(euler_resids_AR, shadow_rate_mat_AR) = shadow_rates!(h2,t2; path = path_AR)
+
+shadow_rate_AR = minimum(shadow_rate_mat_AR[path_AR[1,1].pdf .> 1e-6]) - 1
+
 ## Solving the portfolio problem
 
-# Initialize guess 
+# Initialize guess
 r_guess = copy(path_AR.r)
-r_guess[1,2] = -0.013339946457384021
+r_guess[1,2] = shadow_rate_AR + 4e-5
 
 # Update guess with two previous iterations
 nlsolve_base_kwargs = (ftol = 1e-06, show_trace = false, method = :anderson, m = 10, iterations = 3, beta = -0.001) #-0.01  # adjustment parameter for the fixed point algorithm
@@ -905,16 +909,14 @@ f_AR = do_plots_AR(path_portfolio_AR,e_init_AR, path_lf, shadow_rate_lf)
 ############################################################################
 # ## Statistics. Generate Table 1 and 2 in the paper
 
-tab_1_2 = generate_tables(e_init, e_final, path, e_final_2, path_2, io=String);
-
-@info tab_1_2[1]
-@info tab_1_2[2]
-
 e_init_lst = (e_init, e_init_3, e_init_AR, e_init)
 e_final_lst = (e_final, e_final_4, e_final_AR, e_final_2)
 paths_lst = (path, path_4, path_portfolio_AR, path_2)
 
-tab_all = generate_tables_all(e_init_lst, e_final_lst, paths_lst, io=String);
+# data numbers used in Table 2
+data_numbers = [60, -1.4, 2.5, -1, 1, 4, 13, 83]
+
+tab_all = generate_tables_all(e_init_lst, e_final_lst, paths_lst, io=String; data = data_numbers);
 
 @info tab_all[1]
 @info tab_all[2]
@@ -941,10 +943,6 @@ save(joinpath(@__DIR__, "..", "output", "figures", "transition_aggregate_risk.pd
 
 # Save tables in the "output/tables" directory
 
-open(joinpath(@__DIR__, "..", "output", "tables", "statistics.txt"), "w") do file
-    write(file, tab_1_2...)
-end;
-
-open(joinpath(@__DIR__, "..", "output", "tables", "statistics_all.txt"), "w") do file
+open(joinpath(@__DIR__, "..", "output", "tables", "tables_1_and_2.txt"), "w") do file
     write(file, tab_all...)
 end;
