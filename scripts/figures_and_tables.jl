@@ -50,45 +50,47 @@ t = let
 end
 
 
+
 ############################################################################
-# Creating Figure 1 in the paper 
+# Initial equilibrium (laissez faire)
+
+@info "Computing initial laissez-faire equilibrium"
+@time e_init = stationary_laissez_faire(h, t; r_range = (-0.02, 0.0), verbose = true)
+
+############################################################################
+# ## Constant-K Transition
+
+# Transition to a higher debt level
+
+# b = 0.6 y0 
+b_target = y(e_init) * 0.60
+
+# Final equilibrium with higher debt and same k
+
+@info "Computing final constant-k equilibrium with higher b"
+@time e_final = stationary_equilibrium_given_k_b(e_init, e_init.k, b_target; r_range = (-0.02, 0.0), verbose = true)
 
 
-fig1 = let t = t, h = h 
+############################################################################
+#  ### Creating Figure 1 in the paper 
 
-    # Solve laissez-faire economy
-    r_range = (-0.0171, -0.016)
-    @time laissez_faire_μ = stationary_laissez_faire(h, t;
-        r_range = r_range)
-
-
-    # New Constant K steady state  
-    final_eq_μ = let
-        y = output(t; laissez_faire_μ.k, laissez_faire_μ.n)
-        b_target = y * 0.60
-        k_target = laissez_faire_μ.k
-        @time stationary_equilibrium_given_k_b(
-            laissez_faire_μ,
-            k_target,
-            b_target;
-            r_range =  (-0.0171, -0.010)
-        )
-    end
+@info "Creating Figure 1"
+fig1 = let t = t, h = h, laissez_faire_μ = e_init, final_eq_μ = e_final 
 
     # # trace out household savings function 
-
     eq_μ = let
         y_0 = output(t; laissez_faire_μ.k, laissez_faire_μ.n)
         b_range = range(- 0.5 * y_0, 3 * y_0, length = 20)
         k_target = laissez_faire_μ.k
         eqs = []
         for b in b_range
+            @info "  Computing equilibrium for b = $b"
             push!(eqs,
             stationary_equilibrium_given_k_b(
                     laissez_faire_μ,
                     k_target,
                     b;
-                    r_range = (-0.03, 0.0)
+                    r_range = (-0.03, 0.0), verbose = false
                 )
             )
         end
@@ -139,25 +141,7 @@ end
 
 
 ############################################################################
-# Initial equilibrium (laissez faire)
-
-@info "Computing initial laissez-faire equilibrium"
-@time e_init = stationary_laissez_faire(h, t; r_range = (-0.02, 0.0), verbose = true)
-
-############################################################################
-# ## Constant-K Transition
-
-# Transition to a higher debt level
-
-# b = 0.6 y0 
-b_target = y(e_init) * 0.60
-
-# Final equilibrium with higher debt and same k
-
-@info "Computing final constant-k equilibrium with higher b"
-@time e_final = stationary_equilibrium_given_k_b(e_init, e_init.k, b_target; r_range = (-0.02, 0.0), verbose = true)
-
-
+# ### Transition 
 # Debt policy and capital (constant) along the transition
 
 b_path = let   # Smooth path of increasing debt  
