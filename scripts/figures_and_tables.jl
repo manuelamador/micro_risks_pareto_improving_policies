@@ -137,7 +137,6 @@ fig1 = let t = t, h = h
     f
 end
 
-error("here")
 
 ############################################################################
 # Initial equilibrium (laissez faire)
