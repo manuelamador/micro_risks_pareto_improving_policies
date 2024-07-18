@@ -49,6 +49,95 @@ t = let
     CobbDouglasTechnology(α = α, A = A^((1 - α)), δ = δ, μ = μ)
 end
 
+
+############################################################################
+# Creating Figure 1 in the paper 
+
+
+fig1 = let t = t, h = h 
+
+    # Solve laissez-faire economy
+    r_range = (-0.0171, -0.016)
+    @time laissez_faire_μ = stationary_laissez_faire(h, t;
+        r_range = r_range)
+
+
+    # New Constant K steady state  
+    final_eq_μ = let
+        y = output(t; laissez_faire_μ.k, laissez_faire_μ.n)
+        b_target = y * 0.60
+        k_target = laissez_faire_μ.k
+        @time stationary_equilibrium_given_k_b(
+            laissez_faire_μ,
+            k_target,
+            b_target;
+            r_range =  (-0.0171, -0.010)
+        )
+    end
+
+    # # trace out household savings function 
+
+    eq_μ = let
+        y_0 = output(t; laissez_faire_μ.k, laissez_faire_μ.n)
+        b_range = range(- 0.5 * y_0, 3 * y_0, length = 20)
+        k_target = laissez_faire_μ.k
+        eqs = []
+        for b in b_range
+            push!(eqs,
+            stationary_equilibrium_given_k_b(
+                    laissez_faire_μ,
+                    k_target,
+                    b;
+                    r_range = (-0.03, 0.0)
+                )
+            )
+        end
+        eqs
+    end
+
+    n0 = laissez_faire_μ.n
+    δ = t.δ
+    μ = t.μ
+
+    n0 = laissez_faire_μ.n
+
+    y0 = output(t; laissez_faire_μ.k, laissez_faire_μ.n)
+    y1 = output(t; final_eq_μ.k, final_eq_μ.n)
+    ky_0 = laissez_faire_μ.k / y0
+    ky_1 = final_eq_μ.k / y0 
+    a_1 = final_eq_μ.a / y0 
+
+    r_1 = final_eq_μ.r
+    r_0 = laissez_faire_μ.r
+
+    f = Figure()
+    ax = Axis(f[1, 1], xlabel = "Capital to output ratio", ylabel = "Interest rate", limits = (0, 5, -0.03, 0.01), 
+    xgridvisible = false, ygridvisible = false, 
+    yticks = range(-0.03, 0.01, length = 5))
+
+    band!(ax, [0, ky_0],             # xlims for shade
+        [r_0, r_0] , [r_1, r_1], color = (:red, 0.5)
+    )
+
+    band!(ax, [ky_0, a_1],             # xlims for shade
+    [0, 0] , [r_1, r_1], color = (:gray, 0.9)
+    )
+
+    lines!(ax, [(eq.a / y0, eq.r) for eq in eq_μ ], color = :black, linewidth = 2)
+
+    lines!(ax, [
+         (MicroRisks.k_from_mpk_n(t; mpk = (r + δ), n = n0)/y0, r) for r in range(-0.03, 0.01, length = 15)], color = :red, 
+         linewidth = 2)
+    
+    hlines!(ax, [0], color = :black)
+    vlines!(ax, [laissez_faire_μ.k / y0], color = :black, linewidth = 0.75)
+
+    hlines!([laissez_faire_μ.r, final_eq_μ.r], color = :black, linewidth = 0.75)
+
+    f
+end
+
+
 ############################################################################
 # Initial equilibrium (laissez faire)
 
@@ -929,6 +1018,7 @@ tab_all = generate_tables_all(e_init_lst, e_final_lst, paths_lst, io=String; dat
 
 @info "Saving the figures and statistics"
 
+save(joinpath(@__DIR__, "..", "output", "figures", "ConstantK.pdf"), fig1)
 save(joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_fixed_k.pdf"), f1)
 save(joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_golden_k.pdf"), f2)
 save(joinpath(@__DIR__, "..", "output", "figures", "transition_efficient_no_debt.pdf"), f3)
