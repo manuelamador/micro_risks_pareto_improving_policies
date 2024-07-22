@@ -56,7 +56,7 @@ function calibration(nP::Int64, nIID::Int64, ρ::Float64, σP::Float64, σIID::F
 end
 
 
-# from Quantecon
+# Modified from Quantecon
 
 # @doc doc"""
 # Rouwenhorst's method to approximate AR(1) processes.
@@ -73,18 +73,16 @@ end
 # ##### Returns
 # - `mc::MarkovChain{Float64}` : Markov chain holding the state values and transition matrix
 # """
-function rouwenhorst(N::Integer, ρ::Real, σ::Real, μ::Real=0.0)
+function rouwenhorst(N, ρ, σ, μ = 0.0)
     σ_y = σ / sqrt(1 - ρ^2)
     p  = (1 + ρ) / 2
-    Θ = [p 1 - p; 1 - p p]
-    ψ = sqrt(N - 1) * σ_y
+    Δ = sqrt(N - 1) * σ_y
     m = μ / (1 - ρ)
-    state_values, p = _rouwenhorst(p, p, m, ψ, N)
-
+    state_values, p = _rouwenhorst(p, p, m, Δ, N)
     return p, state_values
 end
 
-function _rouwenhorst(p::Real, q::Real, m::Real, Δ::Real, n::Integer)
+function _rouwenhorst(p, q, m, Δ, n)
     if n == 2
         return [m - Δ, m + Δ],  [p 1 - p; 1 - q q]
     else
@@ -94,7 +92,7 @@ function _rouwenhorst(p::Real, q::Real, m::Real, Δ::Real, n::Integer)
              q * [zeros(1, n); zeros(n - 1, 1) θ_nm1] +
              (1 - q) * [zeros(1, n); θ_nm1 zeros(n - 1, 1)]
         θN[2:end - 1, :] ./= 2
-        return range(m - Δ, stop=m + Δ, length=n), θN
+        return range(m - Δ, stop = m + Δ, length = n), θN
     end
 end
 
